@@ -1,2 +1,2 @@
 # SLAM Sub-System
-[slam/ros2_structure_V1.png]
+!(slam/ros2_structure_V1.png)
