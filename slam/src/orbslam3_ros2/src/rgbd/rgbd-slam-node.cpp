@@ -5,16 +5,10 @@
 using std::placeholders::_1;
 
 RgbdSlamNode::RgbdSlamNode(ORB_SLAM3::System* pSLAM)
-:   Node("ORB_SLAM3_ROS2"),
-    m_SLAM(pSLAM)
-{
-    rgb_sub = std::make_shared<message_filters::Subscriber<ImageMsg> >(shared_ptr<rclcpp::Node>(this), "camera/rgb");
-    depth_sub = std::make_shared<message_filters::Subscriber<ImageMsg> >(shared_ptr<rclcpp::Node>(this), "camera/depth");
-
-    syncApproximate = std::make_shared<message_filters::Synchronizer<approximate_sync_policy> >(approximate_sync_policy(10), *rgb_sub, *depth_sub);
-    syncApproximate->registerCallback(&RgbdSlamNode::GrabRGBD, this);
-
-}
+:   Node("ORB_SLAM3_ROS2"){
+    m_SLAM = pSLAM;
+    //add image service call, pass result into grabRGBD
+        }
 
 RgbdSlamNode::~RgbdSlamNode()
 {
@@ -48,6 +42,7 @@ void RgbdSlamNode::GrabRGBD(const ImageMsg::SharedPtr msgRGB, const ImageMsg::Sh
         RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
         return;
     }
-
+    cv::cvtColor(cv_ptrRGB->image,cv_ptrRGB->image, CV_BGR2RGB);
+    cv::imshow("rgb",cv_ptrRGB->image);
     m_SLAM->TrackRGBD(cv_ptrRGB->image, cv_ptrD->image, Utility::StampToSec(msgRGB->header.stamp));
 }

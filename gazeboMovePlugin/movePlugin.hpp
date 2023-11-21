@@ -2,7 +2,6 @@
 #define SYSTEM_PLUGIN_MOVEPLUGIN_HH_
 
 #include <gz/sim/System.hh>
-#include <gz/sim/Link.hh>
 #include <gz/msgs.hh>
 
 namespace move_Plugin
@@ -18,8 +17,6 @@ namespace move_Plugin
         public: void PostUpdate(const gz::sim::UpdateInfo &_info,
                 const gz::sim::EntityComponentManager &_ecm) override;
 
-        public: static void onTopicReceive(const gz::msgs::Twist &msg);
-            
   };
 }
 #endif

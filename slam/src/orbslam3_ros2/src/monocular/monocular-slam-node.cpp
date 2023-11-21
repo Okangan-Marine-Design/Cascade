@@ -1,6 +1,6 @@
 #include "monocular-slam-node.hpp"
 
-#include<opencv2/core/core.hpp>
+#include <opencv2/core/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 
@@ -12,8 +12,8 @@ MonocularSlamNode::MonocularSlamNode(ORB_SLAM3::System* pSLAM)
     m_SLAM = pSLAM;
     // std::cout << "slam changed" << std::endl;
     m_image_subscriber = this->create_subscription<ImageMsg>(
-        "/camera",
-        30,
+        "/camera/rgb",
+        10,
         std::bind(&MonocularSlamNode::GrabImage, this, std::placeholders::_1));
     std::cout << "slam changed" << std::endl;
 }

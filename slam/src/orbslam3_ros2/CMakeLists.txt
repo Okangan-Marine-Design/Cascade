@@ -5,7 +5,7 @@ project(orbslam3)
 set(ENV{PYTHONPATH} "/opt/ros/iron/lib/python3.10/site-packages/")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
-add_compile_options(-g)
+
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -14,6 +14,10 @@ endif()
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
+find_package(sensor_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -27,6 +31,7 @@ find_package(image_transport REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(slam_messages REQUIRED)
 
 include_directories(
   include
@@ -49,15 +54,21 @@ add_executable(rgbd
   src/rgbd/rgbd-slam-node.cpp
 )
 
-ament_target_dependencies(rgbd rclcpp sensor_msgs geometry_msgs cv_bridge message_filters tf2 tf2_ros ORB_SLAM3 Pangolin image_transport tf2_geometry_msgs OpenCV)
-
-
+ament_target_dependencies(rgbd rclcpp sensor_msgs slam_messages geometry_msgs cv_bridge message_filters tf2 tf2_ros ORB_SLAM3 Pangolin image_transport tf2_geometry_msgs OpenCV)
+target_include_directories(rgbd PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(rgbd PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 add_executable(stereo
   src/stereo/stereo.cpp
   src/stereo/stereo-slam-node.cpp
 )
 
-ament_target_dependencies(stereo rclcpp sensor_msgs geometry_msgs cv_bridge message_filters tf2 tf2_ros ORB_SLAM3 Pangolin tf2_geometry_msgs OpenCV)
+ament_target_dependencies(stereo rclcpp slam_messages sensor_msgs geometry_msgs cv_bridge message_filters tf2 tf2_ros ORB_SLAM3 Pangolin tf2_geometry_msgs OpenCV)
+target_include_directories(stereo PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(stereo PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 add_executable(stereo-inertial
  src/stereo-inertial/stereo-inertial.cpp

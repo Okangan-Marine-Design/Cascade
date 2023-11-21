@@ -47,12 +47,13 @@ StereoSlamNode::StereoSlamNode(ORB_SLAM3::System* pSLAM, const string &strSettin
         cv::initUndistortRectifyMap(K_l,D_l,R_l,P_l.rowRange(0,3).colRange(0,3),cv::Size(cols_l,rows_l),CV_32F,M1l,M2l);
         cv::initUndistortRectifyMap(K_r,D_r,R_r,P_r.rowRange(0,3).colRange(0,3),cv::Size(cols_r,rows_r),CV_32F,M1r,M2r);
     }
-
+/*
     left_sub = std::make_shared<message_filters::Subscriber<ImageMsg> >(shared_ptr<rclcpp::Node>(this), "camera/left");
     right_sub = std::make_shared<message_filters::Subscriber<ImageMsg> >(shared_ptr<rclcpp::Node>(this), "camera/right");
 
     syncApproximate = std::make_shared<message_filters::Synchronizer<approximate_sync_policy> >(approximate_sync_policy(10), *left_sub, *right_sub);
     syncApproximate->registerCallback(&StereoSlamNode::GrabStereo, this);
+    */
 }
 
 StereoSlamNode::~StereoSlamNode()
@@ -66,10 +67,10 @@ StereoSlamNode::~StereoSlamNode()
 
 void StereoSlamNode::GrabStereo(const ImageMsg::SharedPtr msgLeft, const ImageMsg::SharedPtr msgRight)
 {
-    // Copy the ros rgb image message to cv::Mat.
     try
     {
         cv_ptrLeft = cv_bridge::toCvShare(msgLeft);
+        cv::cvtColor(cv_ptrLeft->image,cv_ptrLeft->image, CV_BGR2RGB);
     }
     catch (cv_bridge::Exception& e)
     {
@@ -77,10 +78,10 @@ void StereoSlamNode::GrabStereo(const ImageMsg::SharedPtr msgLeft, const ImageMs
         return;
     }
 
-    // Copy the ros depth image message to cv::Mat.
     try
     {
         cv_ptrRight = cv_bridge::toCvShare(msgRight);
+        cv::cvtColor(cv_ptrRight->image,cv_ptrRight->image, CV_BGR2RGB);
     }
     catch (cv_bridge::Exception& e)
     {
@@ -88,6 +89,8 @@ void StereoSlamNode::GrabStereo(const ImageMsg::SharedPtr msgLeft, const ImageMs
         return;
     }
 
+        cv::imshow("left",cv_ptrLeft->image);
+        cv::imshow("right",cv_ptrRight->image);
     if (doRectify){
         cv::Mat imLeft, imRight;
         cv::remap(cv_ptrLeft->image,imLeft,M1l,M2l,cv::INTER_LINEAR);

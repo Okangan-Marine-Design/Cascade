@@ -40,6 +40,8 @@ void movePlugin::PreUpdate(const gz::sim::UpdateInfo &_info,
             if(_ecm.HasEntity(elem)){
                 gzmsg << "Got Entity!"<<'\n';
                 box=Link(elem);
+                box.EnableVelocityChecks(_ecm);
+                box.EnableAccelerationChecks(_ecm);
                 gotBox=node.Subscribe(topic, onTopicReceive);
                 if (!gotBox){
                     gzmsg << "Error subscribing to topic [" << topic << "]" << std::endl;
@@ -52,6 +54,14 @@ void movePlugin::PreUpdate(const gz::sim::UpdateInfo &_info,
     else{
         //change to only apply velocity if constantly being published,
         //maybe record time of last subscription callback and reset velocity to 0 after 100ms or so
+        //
+        /*
+        if(!box.WorldLinearVelocity(_ecm)->Equal(lin,0.05)
+        || !box.WorldAngularVelocity(_ecm)->Equal(ang,0.05)){
+            //box.AddWorldWrench(_ecm,lin,ang);
+            //std::cout<<lin.Max()<<"\n";
+        }
+        */
         box.SetLinearVelocity(_ecm,lin);
         box.SetAngularVelocity(_ecm,ang);
     }
