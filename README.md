@@ -2,4 +2,4 @@
 /prototypes contains software prototypes and misc code
 
 /ros2_ws is going to be the official full system workspace
-![diagram](ros2_structure_V1.png)
+![diagram](diagrams/ros2_structure_V1.png)
