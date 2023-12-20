@@ -1,0 +1,7 @@
+Sensor_server TODO:
+
+create node
+add all storage variables, raw and processed
+add all subscribtion callback functions
+add all server callbacks
+add server calls to sensor processing for each callback

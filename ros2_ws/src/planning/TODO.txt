@@ -1,0 +1,6 @@
+Planning TODO:
+
+create main function
+create infinite loop
+add world state variables
+TBD???

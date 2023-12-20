@@ -1,0 +1,7 @@
+OBJ_detection TODO:
+
+create main function
+create infinite loop
+create sensor server calls (get img data)
+import whatever ml library is needed to run ml model
+publish to /objects topic

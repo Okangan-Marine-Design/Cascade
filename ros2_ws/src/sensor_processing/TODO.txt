@@ -1,0 +1,4 @@
+Sensor_processing TODO:
+
+add server callbacks for all sensor types
+add functionality to all processing types (break down into parts)

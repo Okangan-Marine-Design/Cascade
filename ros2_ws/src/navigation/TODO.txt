@@ -1,0 +1,5 @@
+Navigation TODO:
+
+create subscribtion callback to /destination
+create a* search function?
+
