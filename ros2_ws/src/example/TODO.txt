@@ -1,10 +1,4 @@
-SLAM TODO:
+Example TODO:
 
-create vio and map nodes
-add vio library
-create infinite loop for vio
-publish to /odometry
-
-add octomap library
-create subscription callbacks to /objects and /odometry
+make python example package
 
