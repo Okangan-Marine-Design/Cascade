@@ -37,19 +37,25 @@ void left_callback(const sensor_msgs::msg::Image &msg){
 
 void imu_callback(const sensor_msgs::msg::Imu &msg){
     recent_imu=msg;
+    //TODO: research smoothing for imu data
 }
 
-void send_rgbd(const std::shared_ptr<sub_messages::srv::RGBD::Request> request,
-    std::shared_ptr<slam_messages::srv::RGBD::Response>      response){
+void send_rgbd(const std::shared_ptr<robo_messages::srv::RGBD::Request> request,
+    std::shared_ptr<robo_messages::srv::RGBD::Response>      response){
     response->rgb = recent_rgb;
     response->depth = recent_depth;
 }
-void send_stereo(const std::shared_ptr<sub_messages::srv::Stereo::Request> request,
-    std::shared_ptr<slam_messages::srv::Stereo::Response>      response){
+void send_stereo(const std::shared_ptr<robo_messages::srv::Stereo::Request> request,
+    std::shared_ptr<robo_messages::srv::Stereo::Response>      response){
     response->left = recent_left;
     response->right = recent_right;
 }
     
+void send_imu(const std::shared_ptr<robo_messages::srv::Imu::Request> request,
+    std::shared_ptr<robo_messages::srv::Imu::Response>      response){
+    response->data = recent_imu;
+}
+
 int main(int argc, char **argv){
     rclcpp::init(argc, argv);
     std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("sensor_server");
@@ -70,6 +76,9 @@ int main(int argc, char **argv){
     //imu subscription
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub =
         node->create_subscription<sensor_msgs::msg::Imu>("/imu",100, &imu_callback);
+    rclcpp::Service<sub_messages::srv::Stereo>::SharedPtr service_stereo = 
+        node->create_service<robo_messages::srv::Stereo>("imu", &send_imu);
+
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Ready to send sensor data.");
     rclcpp::spin(node);

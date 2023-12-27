@@ -8,3 +8,10 @@ publish to /odometry
 add octomap library
 create subscription callbacks to /objects and /odometry
 
+consider vio becoming just odometry using imu integration
+low texture envirnement underwater is very difficult to track position in
+
+maybe write simple line based vio from scratch? 
+
+definetly start with just imu inegration odometry
+
