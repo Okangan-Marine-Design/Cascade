@@ -9,7 +9,6 @@
  *  client
  *
  * Also contains example data logging using ROS_INFO
- * TODO: add other types of messages (more critical types)
  *
  * not meant to actually run, just for use as reference
  */

@@ -15,3 +15,24 @@ maybe write simple line based vio from scratch?
 
 definetly start with just imu inegration odometry
 
+possible world states from map node:
+    inWater
+    foundGate
+    throughGate
+    foundMarker1
+    foundMarker2
+    foundMarker3
+    hearPinger
+    foundBuoy
+    hitBuoy
+    foundOctogon
+    surfaced
+
+How will boundaries be handeled?
+recognize lane lines?
+how will we see the floor?
+not run into wall?
+ultrasound sensors?
+
+
+

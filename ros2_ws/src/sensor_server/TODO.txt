@@ -1,10 +1,12 @@
 Sensor_server TODO:
 
-create node
-add all storage variables, raw and processed
-add all subscribtion callback functions
-add all server callbacks
-add server calls to sensor processing for each callback
 add time stamps for data? this way can discerne if sensor data is old and cannot be used?
 
-
+required variables:
+    left cam 
+    right cam
+    bottom cam
+    imu
+    depth sensor
+    hydrophone
+    
