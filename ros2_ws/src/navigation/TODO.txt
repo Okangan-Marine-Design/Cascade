@@ -3,3 +3,8 @@ Navigation TODO:
 create subscribtion callback to /destination
 create a* search function?
 
+some form of progress tracking is important
+compare imu movement readings to expected path, if there is a large disparity 
+(not moving at all while supposed to be moving forward)
+then an error can be thrown and the sub can try to move back and restart its path
+useful if perhaps the sub gets hooked on gate or something similar

@@ -34,5 +34,23 @@ how will we see the floor?
 not run into wall?
 ultrasound sensors?
 
+Octomap:
 
+utilize ColorOcTree for semantic object information?
+each type of object can be represented as a different color
+
+octomap roadmap: 
+implement using rgbd data from gazebo sim
+experiment with implementing specific types of objects into the map, not just occupancy infomation
+    - ml node needed? 
+    - use generic yolov8 until ml team has something?
+implement scan source updating (odometry)
+    - subscrube to /odeometry
+    - create variable for scan start point (most recent odeomtry value)
+
+how will distances of objects be handeled if we have no stereo camera?
+manually updating batches of nodes based on ml output and distance estimates?
+
+is 3d mapping required, can we get by without using it? 
+maybe but its probably not worth it
 

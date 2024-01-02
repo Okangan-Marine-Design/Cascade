@@ -1,5 +1,12 @@
 #include "rclcpp/rclcpp.hpp"
 #include "System.h"
+#include <octomap/octomap.h>
+#include <octomap/OcTree.h>
+
+using namespace std;
+using namespace octomap;
+
+OcTree tree (0.05);
 
 void odometry_subscription_callback(const robo_messages::msg::pos_estimate &msg){
     std::cout<<"got messgage from /topic";
@@ -27,7 +34,7 @@ void map_object_service_callback(const std::shared_ptr<package::srv::type::Reque
 
     response->data = variable;
     std::cout<<"sending back data";
-    //specific objects will be sent back by type requested?
+    //location of specific objects will be sent back by type requested?
 }
 
 int main(int argc, char **argv)
@@ -51,8 +58,6 @@ int main(int argc, char **argv)
     
     rclcpp::Service<package::srv::type>::SharedPtr service =
     node->create_service<package::srv::type>("map_objects", &map_object_service_callback);
-
-    //simple, all work is done within the callbacks
 
     rclcpp::spin(node);
     rclcpp::shutdown();
