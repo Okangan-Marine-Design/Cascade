@@ -1,5 +1,26 @@
 SLAM TODO:
 
+directly add stereo depth map readings to map
+vs 
+manually create objects from ml readings
+
+directly adding probably makes more sense
+maybe do both?
+
+for now, directly add depth map to octomap
+
+use multiple kinds of maps?
+raw + semantic
+
+raw used for collision avoidance, sematic used for navigation
+
+test stereo depth effectiveness in underwater pool somehow?
+
+publish stereo depth maps to a topic?
+
+sensor_server will do this publishing
+
+
 create vio and map nodes
 add vio library
 create infinite loop for vio
