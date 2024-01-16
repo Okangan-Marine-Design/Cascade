@@ -13,15 +13,38 @@ sensor_msgs::msg::Image recent_front_cam_rgb;
 sensor_msgs::msg::Image recent_front_cam_depth;
 sensor_msgs::msg::Imu recent_imu;
 
+rclcpp::Client<robo_messages::srv::Stereo2RGBD>::SharedPtr Stereo2RGBD_client;
+
+rclcpp::Publisher<std_msgs::msg::String>::SharedPtr front_rgbd_publisher;
+
 rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr front_cam_rgb_sub;
 rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr front_cam_depth_sub;
 rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr front_right_cam_sub;
 rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr front_left_cam_sub;
-//rclcpp::Subscription<float>::SharedPtr depth; 
-//how to subscribe to float type topic?
+rclcpp::Subscription<float>::SharedPtr depth; 
 
 //rclcpp::Subscription<???>::SharedPtr hydrophone; 
 //TODO: figure out what kind of data we get from hydrophones
+
+void call_RGBD_processing(){
+    auto request = std::make_shared<robo_messages::srv::Stereo2RGBD::Request>();
+    
+    request->left=recent_front_left_cam;
+    request->right=recent_front_right_cam;
+
+    auto result = Stereo2RGBD_client->async_send_request(request); 
+    if (rclcpp::spin_until_future_complete(node, result) == rclcpp::FutureReturnCode::SUCCESS){
+        auto temp=*result.get(); 
+        recent_front_cam_rgb=temp.rgb;
+        recent_front_cam_depth=temp.depth;
+    } 
+    else RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call Stereo2RGBD service");
+
+    auto message = robo_messages::msg::RGBD();
+    message.rgb=recent_front_cam_rgb;
+    message.depth=recent_front_cam_depth;
+    front_rgbd_publisher->publish(message);//publishes to /rgbd every time processing is complete
+}
 
 void front_rgb_subscription_callback(const sensor_msgs::msg::Image &msg){
     recent_front_cam_rgb=msg;
@@ -34,9 +57,9 @@ void front_right_cam_subscription_callback(const sensor_msgs::msg::Image &msg){
 }
 void front_left_cam_subscription_callback(const sensor_msgs::msg::Image &msg){
     recent_front_left_cam=msg;
-    //TODO:add depth processing on every left or right callback, doesnt really matter
-    //add some kind of timestamp for more accurate stereo photo matching? does it even matter?
+    call_RGBD_processing();
 }
+
 void bottom_cam_subscription_callback(const sensor_msgs::msg::Image &msg){
     recent_bottom_cam=msg;
 }
@@ -77,6 +100,16 @@ int main(int argc, char **argv){
         node->create_service<slam_messages::srv::RGBD>("front_rgbd", &rgbd_service_callback);
     front_cam_rgb_sub = node->create_subscription<sensor_msgs::msg::Image>("/camera/front/rgb",10, &front_rgb_subscription_callback);
     front_cam_depth_sub = node->create_subscription<sensor_msgs::msg::Image>("/camera/front/depth",10,&front_depth_subscription_callback);
+    front_rgbd_publisher = node->create_publisher<robo_messages::msg::RGBD>("/front_rgbd", 10);
+    Stereo2RGBD_client = node->create_client<robo_messages::srv::Stereo2RGBD>("stereo2rgbd");//use name of service being requested from
+
+    while (!Stereo2RGBD_client->wait_for_service(1s)) {//checking if the service exists
+        if (!rclcpp::ok()) {
+            RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for Stereo2RGBD service. Exiting.");
+            return 0;
+        }
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Stereo2RGBD service not responding, trying again...");
+    }
 
     //image services and subscriptions
     rclcpp::Service<sub_messages::srv::Stereo>::SharedPtr front_stereo_service = 
@@ -91,13 +124,16 @@ int main(int argc, char **argv){
     //imu subscription and service
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub =
         node->create_subscription<sensor_msgs::msg::Imu>("/imu",100, &imu_subscription_callback);
-    rclcpp::Service<sub_messages::srv::Stereo>::SharedPtr imu_service = 
-        node->create_service<robo_messages::srv::Stereo>("imu", &imu_service_callback);
+    rclcpp::Service<robo_messages::srv::Imu>::SharedPtr imu_service = 
+        node->create_service<robo_messages::srv::Imu>("imu", &imu_service_callback);
 
     //TODO: add hydrophone subscription
-    //TODO: add hydrophone service?
-    //TODO: add depth sensor subscription
-    //TODO: add depth sensor service
+    //TODO: add hydrophone service
+
+    rclcpp::Subscription<float>::SharedPtr depth_sub =
+        node->create_subscription<float>("/depth",100, &depth_subscription_callback);
+    rclcpp::Service<robo_messages::srv::Depth>::SharedPtr depth_service = 
+        node->create_service<robo_messages::srv::Depth>("depth", &depth_service_callback);
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "All subscriptions and services started. Ready to send sensor data.");
     rclcpp::spin(node);

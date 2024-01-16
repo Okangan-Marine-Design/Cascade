@@ -26,7 +26,7 @@ int main(int argc, char **argv){
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "sensor_processing node launched");
     //creation of RGBD data subscription and service
     rclcpp::Service<slam_messages::srv::RGBD>::SharedPtr service_rgbd = 
-        node->create_service<slam_messages::srv::RGBD>("stereo2rgbd", &send_rgbd);
+        node->create_service<slam_messages::srv::RGBD>("stereo2rgbd", &stereo2rgbd_service_callback);
 
     rclcpp::spin(node);
     rclcpp::shutdown();

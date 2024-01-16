@@ -1,40 +1,22 @@
 SLAM TODO:
 
-directly add stereo depth map readings to map
-vs 
-manually create objects from ml readings
+implement IMU integration
+test ORBSLAM_3 again? will probably be better than imu alone
 
-directly adding probably makes more sense
-maybe do both?
-
-for now, directly add depth map to octomap
+directly add depth map to octomap (using rgbd and absolute pose data from gazebo)
 
 use multiple kinds of maps?
 raw + semantic
 
 raw used for collision avoidance, sematic used for navigation
 
-test stereo depth effectiveness in underwater pool somehow?
-
-publish stereo depth maps to a topic?
-
-sensor_server will do this publishing
-
-
-create vio and map nodes
-add vio library
+search for vio library
 create infinite loop for vio
 publish to /odometry
 
-add octomap library
-create subscription callbacks to /objects and /odometry
-
-consider vio becoming just odometry using imu integration
-low texture envirnement underwater is very difficult to track position in
-
 maybe write simple line based vio from scratch? 
 
-definetly start with just imu inegration odometry
+start with just imu inegration odometry
 
 possible world states from map node:
     inWater
@@ -65,13 +47,10 @@ implement using rgbd data from gazebo sim
 experiment with implementing specific types of objects into the map, not just occupancy infomation
     - ml node needed? 
     - use generic yolov8 until ml team has something?
-implement scan source updating (odometry)
-    - subscrube to /odeometry
-    - create variable for scan start point (most recent odeomtry value)
 
-how will distances of objects be handeled if we have no stereo camera?
-manually updating batches of nodes based on ml output and distance estimates?
+how will object location confidences be updated
+store address of every leaf node of a certain type (ex. all gate nodes)
 
-is 3d mapping required, can we get by without using it? 
-maybe but its probably not worth it
+use robot_localization or orbslam3 pose as absolute pose
+maybe both? convert orbslam3 pose to odometry and then integrate it with the imu data using robot_localization?
 

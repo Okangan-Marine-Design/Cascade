@@ -15,7 +15,10 @@ void odom_loop(){//for clarity in main loop
         }
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not responding, trying again...");
     }
-
+    //add orbslam3 startup here?
+    //subscribe to pose
+    //if orbslam3 is implemented, imu integration not needed
+    //https://github.com/raulmur/ORB_SLAM2/issues/597
     while(rclcpp::ok()){
         auto result = client->async_send_request(request);//send request using client
         if (rclcpp::spin_until_future_complete(node, result) ==
@@ -58,6 +61,8 @@ int main(int argc, char **argv)
     imu_client = node->create_client<package::srv::client_type>("imu");//use name of service being requested from
 
     odom_loop();
+    //sensor_msgs/Imu -> geometry_msgs/Pose
+    //geometry_msgs/Pose -> robo_messages/pose6d
 
     rclcpp::shutdown();
 

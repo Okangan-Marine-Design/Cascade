@@ -4,7 +4,7 @@ rough file outline for object detection
 """
 #TODO: import required libraries
 
-def inference(img){
+def inference(img){#input: image, output: list of bounding boxes
     objects={};
     #how will a list of objects be represented in a message?
     #maybe one object per message and then theyre published individually to /objects topic
