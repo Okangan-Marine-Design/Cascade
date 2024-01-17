@@ -4,3 +4,7 @@ build/
 .cmake
 .make
 CMakeFiles/
+ORB_SLAM3/
+install/
+log/
+

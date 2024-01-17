@@ -13,7 +13,13 @@ find_package(sensor_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
     srv/RGBD.srv
     srv/Stereo.srv
-  DEPENDENCIES sensor_msgs )
+    srv/Stereo2RGBD.srv
+    srv/Imu.srv
+    srv/Depth.srv
+    msg/Object.msg
+    msg/Pose6d.msg
+    msg/RGBD.msg
+  DEPENDENCIES sensor_msgs geometry_msgs )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
