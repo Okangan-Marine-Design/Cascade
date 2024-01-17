@@ -35,7 +35,7 @@ int main(int argc, char **argv)
             RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
             return 0;
         }
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "rgbd_server not responding, trying again...");
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "sensor_server(rgbd) not responding, trying again...");
     }
     while(rclcpp::ok()){
         auto result = client->async_send_request(request);

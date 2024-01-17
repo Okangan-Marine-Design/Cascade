@@ -4,6 +4,9 @@ project(sensor_server)
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -12,9 +15,12 @@ find_package(cv_bridge REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(robo_messages REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 
 add_executable(server src/main.cpp)
-ament_target_dependencies(server rclcpp sensor_msgs cv_bridge image_transport OpenCV robo_messages)
+ament_target_dependencies(server rclcpp std_msgs sensor_msgs cv_bridge image_transport OpenCV robo_messages geometry_msgs)
 
 install(TARGETS server
   DESTINATION lib/${PROJECT_NAME})
