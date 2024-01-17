@@ -24,7 +24,7 @@ find_package(image_transport REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(slam_messages REQUIRED)
+find_package(robo_messages REQUIRED)
 
 include_directories(
   include
@@ -32,7 +32,8 @@ include_directories(
   ${ORB_SLAM3_ROOT_DIR}/include/CameraModels
 )
 
-ament_target_dependencies(rgbd rclcpp sensor_msgs slam_messages geometry_msgs cv_bridge message_filters tf2 tf2_ros ORB_SLAM3 Pangolin image_transport tf2_geometry_msgs OpenCV)
+ament_target_dependencies(rgbd rclcpp sensor_msgs robo_messages geometry_msgs cv_bridge message_filters tf2 tf2_ros ORB_SLAM3 Pangolin image_transport tf2_geometry_msgs OpenCV)
+
 add_executable(rgbd
   rgbd/rgbd.cpp
   rgbd/rgbd-slam-node.cpp)
