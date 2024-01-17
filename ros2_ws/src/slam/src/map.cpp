@@ -1,9 +1,15 @@
 #include "rclcpp/rclcpp.hpp"
-#include "System.h"
-#include <octomap>
+#include <octomap/math/Pose6D.h>
+#include <octomap/octomap.h>
 #include <opencv2/core/core.hpp>
 #include "sensor_msgs/msg/image.hpp"
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "robo_messages/msg/rgbd.hpp"
+#include "robo_messages/srv/object.hpp"
+#include "robo_messages/srv/world_states.hpp"
+#include "robo_messages/msg/object.hpp"
+#include <opencv2/core/core.hpp>
 
 using namespace std;
 using namespace octomap;
@@ -12,7 +18,8 @@ OcTree tree (0.05);
 pose6d current_pose;
 unsigned int current_id=0;
 
-Pointcloud rgbd2pointcloud(const ImageMsg::SharedPtr depth){
+
+Pointcloud rgbd2pointcloud(const sensor_msgs::msg::Image depth){
     Pointcloud result;
     //for: all points in img
     //  using camera specifications (FOV), create real world relative x and y coordinates for each pixel
@@ -24,36 +31,35 @@ Pointcloud rgbd2pointcloud(const ImageMsg::SharedPtr depth){
 }
 
 void rgbd_subscription_callback(const robo_messages::msg::RGBD &msg){
-    ScanNode scan(rgbd2pointcloud(msg.depth),current_pose,current_id++);
-    map.insertPointCloud(scan);
+    Pointcloud pc = rgbd2pointcloud(msg.depth);
+    ScanNode scan(&pc,current_pose,current_id++);
+    tree.insertPointCloud(scan);
 }
 
-void odometry_subscription_callback(const robo_messages::msg::pose6d &msg){
+void odometry_subscription_callback(const geometry_msgs::msg::PoseStamped &msg){
     std::cout<<"got messgage from /odometry";
-    current_pose=msg.data;
+    //current_pose=msg.data;
     //update absolute pose or sum up pose here?
     //TODO: create pose message type/ find interal pose6d type
 }
 
-void objects_subscription_callback(const robo_messages::msg::object_location_estimates &msg){
+void objects_subscription_callback(const robo_messages::msg::Object &msg){
     std::cout<<"got messgage from /topic";
     //integrate into map
     //update probability distribution of object based on reading 
     //and on sub location 
 }
 
-void world_state_service_callback(const std::shared_ptr<package::srv::type::Request> request,
-    std::shared_ptr<package::srv::type::Response> response){
+void world_state_service_callback(const std::shared_ptr<robo_messages::srv::WorldStates::Request> request,
+    std::shared_ptr<robo_messages::srv::WorldStates::Response> response){
 
-    response->data = variable;
     std::cout<<"sending back data";
     //send back list of all world states
 }
 
-void map_object_service_callback(const std::shared_ptr<package::srv::type::Request> request,
-    std::shared_ptr<package::srv::type::Response> response){
+void map_object_service_callback(const std::shared_ptr<robo_messages::srv::Object::Request> request,
+    std::shared_ptr<robo_messages::srv::Object::Response> response){
 
-    response->data = variable;
     std::cout<<"sending back data";
     //location of specific objects will be sent back by type requested?
 }
@@ -67,21 +73,21 @@ int main(int argc, char **argv)
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), 
             "created map node!");
         
-    rclcpp::Subscription<package::msg::msg_type>::SharedPtr odometry_subscription=
-    node->create_subscription<package::msg::msg_type>("/odom",10, &odometry_subscription_callback);
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr odometry_subscription=
+    node->create_subscription<geometry_msgs::msg::PoseStamped>("/pose",10, &odometry_subscription_callback);
 
-    rclcpp::Subscription<package::msg::msg_type>::SharedPtr rgbd_subscription=
-    node->create_subscription<package::msg::msg_type>("/front_rgbd",10, &rgbd_subscription_callback);
+    rclcpp::Subscription<robo_messages::msg::RGBD>::SharedPtr rgbd_subscription=
+    node->create_subscription<robo_messages::msg::RGBD>("/front_rgbd",10, &rgbd_subscription_callback);
     
-    rclcpp::Subscription<package::msg::msg_type>::SharedPtr objects_subscription=
-    node->create_subscription<package::msg::msg_type>("/objects",10, &objects_subscription_callback);
+    rclcpp::Subscription<robo_messages::msg::Object>::SharedPtr objects_subscription=
+    node->create_subscription<robo_messages::msg::Object>("/objects",10, &objects_subscription_callback);
 
 
-    rclcpp::Service<package::srv::type>::SharedPtr world_state_service =
-    node->create_service<package::srv::type>("world_states", &world_state_service_callback);
+    rclcpp::Service<robo_messages::srv::WorldStates>::SharedPtr world_state_service =
+    node->create_service<robo_messages::srv::WorldStates>("world_states", &world_state_service_callback);
     
-    rclcpp::Service<package::srv::type>::SharedPtr map_object_service =
-    node->create_service<package::srv::type>("map_objects", &map_object_service_callback);
+    rclcpp::Service<robo_messages::srv::Object>::SharedPtr map_object_service =
+    node->create_service<robo_messages::srv::Object>("map_objects", &map_object_service_callback);
 
     rclcpp::spin(node);
     rclcpp::shutdown();

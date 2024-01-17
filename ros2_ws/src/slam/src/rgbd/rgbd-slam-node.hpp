@@ -7,14 +7,18 @@
 #include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/transform_broadcaster.h"
+#include <tf2/LinearMath/Transform.h>
+#include <tf2/impl/convert.h>
+#include "tf2/LinearMath/Quaternion.h"
 #include "sensor_msgs/msg/image.hpp"
-#include "geometry_msgs/msg/PoseStamped.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "message_filters/subscriber.h"
 #include "message_filters/synchronizer.h"
 #include "message_filters/sync_policies/approximate_time.h"
 
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 
 #include "robo_messages/srv/rgbd.hpp"
 #include "System.h"
@@ -43,6 +47,7 @@ public:
     std::shared_ptr<rclcpp::Node> node_ptr;
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image> > rgb_sub;
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image> > depth_sub;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub;
 
     std::shared_ptr<message_filters::Synchronizer<approximate_sync_policy> > syncApproximate;
 };

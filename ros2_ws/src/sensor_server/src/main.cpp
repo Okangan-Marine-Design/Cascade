@@ -5,7 +5,6 @@
 #include "sensor_msgs/msg/imu.hpp"
 #include <memory>
 #include <string.h>
-#include "main.hpp"
 
 sensor_msgs::msg::Image recent_front_right_cam;
 sensor_msgs::msg::Image recent_front_left_cam;

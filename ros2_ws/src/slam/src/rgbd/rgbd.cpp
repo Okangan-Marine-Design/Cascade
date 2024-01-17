@@ -26,10 +26,10 @@ int main(int argc, char **argv)
     auto node = std::make_shared<RgbdSlamNode>(&SLAM);
     std::cout << "============================ " << std::endl;
 
-    rclcpp::Client<slam_messages::srv::RGBD>::SharedPtr client =
-    node->create_client<slam_messages::srv::RGBD>("rgbd");
+    rclcpp::Client<robo_messages::srv::RGBD>::SharedPtr client =
+    node->create_client<robo_messages::srv::RGBD>("rgbd");
 
-    auto request = std::make_shared<slam_messages::srv::RGBD::Request>();
+    auto request = std::make_shared<robo_messages::srv::RGBD::Request>();
     while (!client->wait_for_service(1s)) {
         if (!rclcpp::ok()) {
             RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");

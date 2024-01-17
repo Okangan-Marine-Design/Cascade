@@ -7,4 +7,5 @@ CMakeFiles/
 ORB_SLAM3/
 install/
 log/
-
+octomap/
+ORBvoc.txt

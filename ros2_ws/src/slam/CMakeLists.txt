@@ -3,6 +3,9 @@ project(slam)
 
 set(ENV{PYTHONPATH} "/opt/ros/iron/lib/python3.10/site-packages/")
 
+set(OCTOMAP_DIR "/home/eryk/Desktop/robosub_git/octomap")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
+
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
@@ -31,15 +34,25 @@ include_directories(
   ${ORB_SLAM3_ROOT_DIR}/include
   ${ORB_SLAM3_ROOT_DIR}/include/CameraModels
 )
+find_package(octomap REQUIRED)
+include_directories(${OCTOMAP_INCLUDE_DIRS})
+
+add_executable(rgbd
+  src/rgbd/rgbd.cpp
+  src/rgbd/rgbd-slam-node.cpp)
 
 ament_target_dependencies(rgbd rclcpp sensor_msgs robo_messages geometry_msgs cv_bridge message_filters tf2 tf2_ros ORB_SLAM3 Pangolin image_transport tf2_geometry_msgs OpenCV)
 
-add_executable(rgbd
-  rgbd/rgbd.cpp
-  rgbd/rgbd-slam-node.cpp)
 add_executable(map
-  map.cpp
+  src/map.cpp
 )
+
+target_link_libraries(map ${OCTOMAP_LIBRARIES})
+ament_target_dependencies(map octomap rclcpp sensor_msgs robo_messages geometry_msgs cv_bridge message_filters tf2 tf2_ros image_transport tf2_geometry_msgs OpenCV)
+
+install(TARGETS rgbd map
+  DESTINATION lib/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights

@@ -16,6 +16,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
     srv/Stereo2RGBD.srv
     srv/Imu.srv
     srv/Depth.srv
+    srv/Object.srv
+    srv/WorldStates.srv
     msg/Object.msg
     msg/Pose6d.msg
     msg/RGBD.msg

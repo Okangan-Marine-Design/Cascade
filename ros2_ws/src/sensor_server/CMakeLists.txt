@@ -13,10 +13,11 @@ find_package(message_filters REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(robo_messages REQUIRED)
 
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+add_executable(server src/main.cpp)
+ament_target_dependencies(server rclcpp sensor_msgs cv_bridge image_transport OpenCV robo_messages)
 
+install(TARGETS server
+  DESTINATION lib/${PROJECT_NAME})
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
