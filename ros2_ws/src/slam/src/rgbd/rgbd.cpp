@@ -9,25 +9,19 @@
 
 int main(int argc, char **argv)
 {
-    if(argc < 3)
-    {
-        std::cerr << "\nUsage: ros2 run orbslam rgbd path_to_vocabulary path_to_settings" << std::endl;
-        return 1;
-    }
-
     rclcpp::init(argc, argv);
 
     // malloc error using new.. try shared ptr
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
 
     bool visualization = true;
-    ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::RGBD, visualization);
+    ORB_SLAM3::System SLAM("ORBvoc.txt", "gazebo_rgbd.yaml", ORB_SLAM3::System::RGBD, visualization);
 
     auto node = std::make_shared<RgbdSlamNode>(&SLAM);
     std::cout << "============================ " << std::endl;
 
     rclcpp::Client<robo_messages::srv::RGBD>::SharedPtr client =
-    node->create_client<robo_messages::srv::RGBD>("rgbd");
+    node->create_client<robo_messages::srv::RGBD>("/front_rgbd");
 
     auto request = std::make_shared<robo_messages::srv::RGBD::Request>();
     while (!client->wait_for_service(1s)) {
@@ -35,7 +29,7 @@ int main(int argc, char **argv)
             RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
             return 0;
         }
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "sensor_server(rgbd) not responding, trying again...");
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), strcat(const_cast<char*> (client->get_service_name())," not responding, trying again..."));
     }
     while(rclcpp::ok()){
         auto result = client->async_send_request(request);

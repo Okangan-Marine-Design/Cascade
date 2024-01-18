@@ -22,7 +22,9 @@ find_package(std_msgs REQUIRED)
 add_executable(server src/main.cpp)
 ament_target_dependencies(server rclcpp std_msgs sensor_msgs cv_bridge image_transport OpenCV robo_messages geometry_msgs)
 
-install(TARGETS server
+add_executable(processing src/processing.cpp)
+ament_target_dependencies(processing rclcpp std_msgs sensor_msgs cv_bridge image_transport OpenCV robo_messages geometry_msgs)
+install(TARGETS server processing
   DESTINATION lib/${PROJECT_NAME})
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

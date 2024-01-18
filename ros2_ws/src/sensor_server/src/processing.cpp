@@ -1,15 +1,15 @@
 #include "rclcpp/rclcpp.hpp"
 #include "robo_messages/srv/rgbd.hpp"
 #include "robo_messages/srv/stereo.hpp"
+#include "robo_messages/srv/stereo2_rgbd.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include <memory>
 #include <string.h>
-#include "main.hpp"
 //TODO: import opencv
 
-void stereo2rgbd_service_callback(const std::shared_ptr<robo_messages::srv::RGBD::Request> request,
-    std::shared_ptr<robo_messages::srv::RGBD2::Response>      response){
+void stereo2rgbd_service_callback(const std::shared_ptr<robo_messages::srv::Stereo2RGBD::Request> request,
+    std::shared_ptr<robo_messages::srv::Stereo2RGBD::Response>      response){
     auto left=request->left;
     auto right=request->right;
     sensor_msgs::msg::Image result_rgb, result_depth;
@@ -25,8 +25,8 @@ int main(int argc, char **argv){
     
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "sensor_processing node launched");
     //creation of RGBD data subscription and service
-    rclcpp::Service<slam_messages::srv::RGBD>::SharedPtr service_rgbd = 
-        node->create_service<slam_messages::srv::RGBD>("stereo2rgbd", &stereo2rgbd_service_callback);
+    rclcpp::Service<robo_messages::srv::Stereo2RGBD>::SharedPtr service_rgbd = 
+        node->create_service<robo_messages::srv::Stereo2RGBD>("stereo2rgbd", &stereo2rgbd_service_callback);
 
     rclcpp::spin(node);
     rclcpp::shutdown();
