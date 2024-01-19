@@ -1,5 +1,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include <octomap/math/Pose6D.h>
+#include <octomap/math/Quaternion.h>
 #include <octomap/octomap.h>
 #include <opencv2/core/core.hpp>
 #include "sensor_msgs/msg/image.hpp"
@@ -13,9 +14,11 @@
 
 using namespace std;
 using namespace octomap;
+using namespace octomath;
+using namespace cv_bridge;
 
 OcTree tree (0.05);
-pose6d current_pose;
+pose6d current_pose = pose6d(0,0,0,0,0,0);
 unsigned int current_id=0;
 
 
@@ -26,21 +29,61 @@ Pointcloud rgbd2pointcloud(const sensor_msgs::msg::Image depth){
     //  octomap::Pointcloud::push_back (float x,float y,float z)
     //TODO: google camera/img projection?
     //projection matrix?
+    //void buildPointCloud(
+     
+    cv::Mat depth_img = cv_bridge::toCvCopy(depth)->image;
+    int w = depth_img.cols;
+    int h = depth_img.rows;
+    //Camera1.fx: 617.201
+    //Camera1.fy: 617.362
+    //Camera1.cx: 324.637
+    //Camera1.cy: 242.462
+    double cx = 242.462;
+    double cy = 324.637;
+    double fx_inv = 1.0 / 617.201;
+    double fy_inv = 1.0 / 617.362;
+    float temp_x,temp_y,temp_z;
+    for (int u = 0; u < w; ++u){
+    for (int v = 0; v < h; ++v){
+        int z = depth_img.at<int>(v, u);   
+        if (z != 0){  
+            double z_metric = z * 0.05;
+        
+            temp_x = z_metric * ((u - cx) * fx_inv);
+            temp_y = z_metric * ((v - cy) * fy_inv);
+            temp_z = z_metric;  
+        }
+        else{
+                temp_x = temp_y = temp_z = std::numeric_limits<float>::quiet_NaN();
+            }
+            result.push_back(temp_x,temp_y,temp_z);
+        }  
+    }
+  
     result.transform(current_pose);//changes relative pose to absolute pose
     return result;
 }
 
 void rgbd_subscription_callback(const robo_messages::msg::RGBD &msg){
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got rgbd!");
     Pointcloud pc = rgbd2pointcloud(msg.depth);
     ScanNode scan(&pc,current_pose,current_id++);
     tree.insertPointCloud(scan);
+    std::cout<<"added scan, volume: "<<tree.volume()<<std::endl;
 }
 
 void odometry_subscription_callback(const geometry_msgs::msg::PoseStamped &msg){
-    std::cout<<"got messgage from /odometry";
-    //current_pose=msg.data;
-    //update absolute pose or sum up pose here?
-    //TODO: create pose message type/ find interal pose6d type
+    current_pose=Pose6D(Vector3(
+                                    msg.pose.position.x,
+                                    msg.pose.position.y,
+                                    msg.pose.position.z),
+                        Quaternion(
+                                    msg.pose.orientation.w,
+                                    msg.pose.orientation.x,
+                                    msg.pose.orientation.y,
+                                    msg.pose.orientation.z)
+                        );
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got pose!");
 }
 
 void objects_subscription_callback(const robo_messages::msg::Object &msg){
