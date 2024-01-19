@@ -8,14 +8,17 @@
 #include "sensor_msgs/msg/image.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/header.hpp"
 #include <memory>
 #include <string.h>
 #include <iostream>
 #include <algorithm>
 #include <fstream>
 #include <chrono>
+#include <cv_bridge/cv_bridge.hpp>
 
 using namespace std::chrono_literals;
+using namespace cv;
 
 std::shared_ptr<rclcpp::Node> node;
 
@@ -49,8 +52,8 @@ void call_RGBD_processing(){
     auto result = Stereo2RGBD_client->async_send_request(request); 
     if (rclcpp::spin_until_future_complete(node, result) == rclcpp::FutureReturnCode::SUCCESS){
         auto temp=*result.get(); 
-        recent_front_cam_rgb=temp.rgb;
-        recent_front_cam_depth=temp.depth;
+        //recent_front_cam_rgb=temp.rgb;
+        //recent_front_cam_depth=temp.depth;
     } 
     else RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call Stereo2RGBD service");
 
@@ -111,6 +114,16 @@ int main(int argc, char **argv){
     node = rclcpp::Node::make_shared("sensor_server");
     
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "sensor_server launched!");
+    std_msgs::msg::Header empty_header;
+    cv::Mat empty = cv::Mat(480, 640, CV_8UC3, Scalar(86, 120, 255));
+
+    cv_bridge::CvImage emptyCV = cv_bridge::CvImage(empty_header,std::string("RGB"),empty);
+    emptyCV.toImageMsg(recent_front_left_cam);
+    emptyCV.toImageMsg(recent_front_right_cam);
+    emptyCV.toImageMsg(recent_front_cam_rgb);
+    emptyCV.toImageMsg(recent_front_cam_depth);
+    emptyCV.toImageMsg(recent_bottom_cam);
+
     //creation of front facing RGBD data subscription and service
     //subscriptions used only in simulator, no real camera can reliably provide direct rbgd data underwater because of IF light attenuation 
     rclcpp::Service<robo_messages::srv::RGBD>::SharedPtr front_rgbd_service = 

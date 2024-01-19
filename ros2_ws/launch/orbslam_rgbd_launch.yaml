@@ -11,6 +11,9 @@ launch:
     pkg: "slam"
     exec: "rgbd"
     name: "orbslam3"
-    namespace: "slam"
+
+- node:
+    pkg: "slam"
+    exec: "map"
 
 
