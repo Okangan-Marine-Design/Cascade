@@ -17,6 +17,7 @@ void stereo2rgbd_service_callback(const std::shared_ptr<robo_messages::srv::Ster
     //do procressing
     response->rgb = result_rgb;
     response->depth = result_depth;
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "sent back processed rgbd data");
 }
     
 int main(int argc, char **argv){

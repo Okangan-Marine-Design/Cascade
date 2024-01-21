@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     std::cout << "============================ " << std::endl;
 
     rclcpp::Client<robo_messages::srv::RGBD>::SharedPtr client =
-    node->create_client<robo_messages::srv::RGBD>("/front_rgbd");
+    node->create_client<robo_messages::srv::RGBD>("front_rgbd");
 
     auto request = std::make_shared<robo_messages::srv::RGBD::Request>();
     while (!client->wait_for_service(1s)) {

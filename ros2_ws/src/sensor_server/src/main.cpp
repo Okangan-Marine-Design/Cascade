@@ -50,21 +50,23 @@ void call_RGBD_processing(){
     request->right=recent_front_right_cam;
 
     auto result = Stereo2RGBD_client->async_send_request(request); 
-    if (rclcpp::spin_until_future_complete(node, result) == rclcpp::FutureReturnCode::SUCCESS){
-        auto temp=*result.get(); 
+    auto status = result.wait_for(1s);  //not spinning here!
+    if (status == std::future_status::ready)
+    {        auto temp=*result.get(); 
         //recent_front_cam_rgb=temp.rgb;
         //recent_front_cam_depth=temp.depth;
+        //temporarily commented out for simulation purposes
+        auto message = robo_messages::msg::RGBD();
+        message.rgb=recent_front_cam_rgb;
+        message.depth=recent_front_cam_depth;
+        front_rgbd_publisher->publish(message);//publishes to /rgbd every time processing is complete
     } 
     else RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call Stereo2RGBD service");
-
-    auto message = robo_messages::msg::RGBD();
-    message.rgb=recent_front_cam_rgb;
-    message.depth=recent_front_cam_depth;
-    front_rgbd_publisher->publish(message);//publishes to /rgbd every time processing is complete
 }
 
 void front_rgb_subscription_callback(const sensor_msgs::msg::Image &msg){
     recent_front_cam_rgb=msg;
+    call_RGBD_processing();//temporary
 }
 void front_depth_subscription_callback(const sensor_msgs::msg::Image &msg){
     recent_front_cam_depth=msg;

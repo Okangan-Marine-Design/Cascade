@@ -125,7 +125,6 @@ int main(int argc, char **argv)
     rclcpp::Subscription<robo_messages::msg::Object>::SharedPtr objects_subscription=
     node->create_subscription<robo_messages::msg::Object>("/objects",10, &objects_subscription_callback);
 
-
     rclcpp::Service<robo_messages::srv::WorldStates>::SharedPtr world_state_service =
     node->create_service<robo_messages::srv::WorldStates>("world_states", &world_state_service_callback);
     
