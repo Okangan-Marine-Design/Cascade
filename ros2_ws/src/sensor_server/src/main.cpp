@@ -21,6 +21,7 @@ using namespace std::chrono_literals;
 using namespace cv;
 
 std::shared_ptr<rclcpp::Node> node;
+bool depth_received=false;
 
 sensor_msgs::msg::Image recent_front_right_cam;
 sensor_msgs::msg::Image recent_front_left_cam;
@@ -50,9 +51,12 @@ void call_RGBD_processing(){
     request->right=recent_front_right_cam;
 
     auto result = Stereo2RGBD_client->async_send_request(request); 
-    auto status = result.wait_for(1s);  //not spinning here!
-    if (status == std::future_status::ready)
-    {        auto temp=*result.get(); 
+    while(!result.valid()){
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "waiting on Stereo2RGBD service");
+    }
+        
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "result is valid");
+        auto temp=*result.get(); 
         //recent_front_cam_rgb=temp.rgb;
         //recent_front_cam_depth=temp.depth;
         //temporarily commented out for simulation purposes
@@ -60,23 +64,28 @@ void call_RGBD_processing(){
         message.rgb=recent_front_cam_rgb;
         message.depth=recent_front_cam_depth;
         front_rgbd_publisher->publish(message);//publishes to /rgbd every time processing is complete
-    } 
-    else RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call Stereo2RGBD service");
 }
 
 void front_rgb_subscription_callback(const sensor_msgs::msg::Image &msg){
     recent_front_cam_rgb=msg;
-    call_RGBD_processing();//temporary
+    if(depth_received){
+        auto message = robo_messages::msg::RGBD();
+        message.rgb=recent_front_cam_rgb;
+        message.depth=recent_front_cam_depth;
+        front_rgbd_publisher->publish(message);
+    }
 }
 void front_depth_subscription_callback(const sensor_msgs::msg::Image &msg){
     recent_front_cam_depth=msg;
+    depth_received=true;
 }
 void front_right_cam_subscription_callback(const sensor_msgs::msg::Image &msg){
     recent_front_right_cam=msg;
 }
 void front_left_cam_subscription_callback(const sensor_msgs::msg::Image &msg){
     recent_front_left_cam=msg;
-    call_RGBD_processing();
+    //call_RGBD_processing();
+    //TODO: remove processing node? move code into the server?
 }
 
 void bottom_cam_subscription_callback(const sensor_msgs::msg::Image &msg){
@@ -168,7 +177,8 @@ int main(int argc, char **argv){
         node->create_service<robo_messages::srv::Depth>("depth", &depth_service_callback);
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "All subscriptions and services started. Ready to send sensor data.");
-    rclcpp::spin(node);
-    rclcpp::shutdown();
+    rclcpp::executors::MultiThreadedExecutor exec;
+    exec.add_node(node);
+    exec.spin();
     return 0;
 }
