@@ -20,6 +20,7 @@ using namespace cv_bridge;
 OcTree tree (0.05);
 pose6d current_pose = pose6d(0,0,0,0,0,0);
 unsigned int current_id=0;
+bool inserted=false;
 
 
 Pointcloud rgbd2pointcloud(const sensor_msgs::msg::Image depth){
@@ -47,11 +48,11 @@ Pointcloud rgbd2pointcloud(const sensor_msgs::msg::Image depth){
     for (int v = 0; v < h; ++v){
         int z = depth_img.at<int>(v, u);   
         if (z != 0){  
-            double z_metric = z * 0.05;
+            double z_metric = z * 0.000001;
         
-            temp_x = z_metric * ((u - cx) * fx_inv);
-            temp_y = z_metric * ((v - cy) * fy_inv);
-            temp_z = z_metric;  
+            temp_x = z_metric * ((u - cx) * fx_inv)/1000;
+            temp_y = z_metric * ((v - cy) * fy_inv)/1000;
+            temp_z = z_metric / 1000;  
         }
         else{
                 temp_x = temp_y = temp_z = std::numeric_limits<float>::quiet_NaN();
@@ -65,11 +66,17 @@ Pointcloud rgbd2pointcloud(const sensor_msgs::msg::Image depth){
 }
 
 void rgbd_subscription_callback(const robo_messages::msg::RGBD &msg){
+    if(!inserted){
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got rgbd!");
     Pointcloud pc = rgbd2pointcloud(msg.depth);
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "converted to point cloud!");
     ScanNode scan(&pc,current_pose,current_id++);
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "created scan!");
     tree.insertPointCloud(scan);
-    std::cout<<"added scan, volume: "<<tree.volume()<<std::endl;
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "inserted scan!");
+    }
+    inserted=true;
+    //std::cout<<"added scan\n";
 }
 
 void odometry_subscription_callback(const geometry_msgs::msg::PoseStamped &msg){
