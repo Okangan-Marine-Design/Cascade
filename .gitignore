@@ -11,4 +11,5 @@ octomap/
 ORBvoc.txt
 ros2_ws/launch/CameraTrajectory.txt
 ros2_ws/launch/KeyFrameTrajectory.txt
+.log
 
