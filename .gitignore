@@ -5,6 +5,7 @@ build/
 .make
 CMakeFiles/
 ORB_SLAM3/
+ros2_ws/install/
 install/
 log/
 octomap/
