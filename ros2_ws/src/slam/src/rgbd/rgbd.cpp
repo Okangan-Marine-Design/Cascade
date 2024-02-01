@@ -32,6 +32,7 @@ int main(int argc, char **argv)
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), strcat(const_cast<char*> (client->get_service_name())," not responding, trying again..."));
     }
     while(rclcpp::ok()){
+        //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "sending request now!");
         auto result = client->async_send_request(request);
         // Wait for the result.
         if (rclcpp::spin_until_future_complete(node, result) ==
