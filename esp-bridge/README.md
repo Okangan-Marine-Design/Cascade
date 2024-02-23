@@ -4,6 +4,7 @@ This code is the bridge between the electronics and the Jetson Orin Nano. It pas
 
 ## Features
 
+- Logging ✅ Implemented
 - Wifi Debug Portal ❌ Not yet implemented
 - Serial Communication ❌ Not yet implemented
 - Temperature Sensor ❌ Not yet implemented
