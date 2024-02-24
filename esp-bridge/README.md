@@ -47,8 +47,6 @@ Sensor::Sensor(int pin) // Constructor
 
 We use polymorphism to create a common interface for all sensors. This allows us to easily add more sensors in the future.
 
-```c++
-
 4. Build the JSON Object
    The JSON object is built from the sensor data. The JSON object is then sent to the Jetson Orin Nano.
    This means that we can add more sensors easily by adding more data to the JSON object.
@@ -64,4 +62,12 @@ We use polymorphism to create a common interface for all sensors. This allows us
 
 8. Heartbeat
    The program checks to see when the last time it received a JSON object from the Jetson Orin Nano. If it has been too long, the program will trigger an emergency mode.
-```
+
+## Naming Conventions
+
+- Class names are capitalized
+- Member variables are prefixed with an underscore
+- Method names are camel case
+- Constants are all caps
+- File names are all lowercase (except for README.md)
+- For sensor files, the file name is the same as the sensor name without the word "sensor" (e.g. temperature.cpp) or (e.g. leak.cpp)

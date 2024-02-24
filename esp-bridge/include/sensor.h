@@ -1,12 +1,17 @@
+
 #include <Arduino.h>
 
 class Sensor
 {
 public:
-    Sensor(int pin, String name); // Constructor
-    void getReading();            // Method
-    String name;                  // The name of the sensor
+    Sensor(String name, int pin);
+    virtual ~Sensor();
 
-private:
-    int _pin; // Member variable
+    template <typename T>
+    T getReading();
+
+    String name;
+
+protected:
+    int _pin;
 };

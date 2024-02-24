@@ -1,8 +1,5 @@
 #include <Arduino.h>
 #include <logging.h>
-#include <temperature.h>
-
-TemperatureSensor tempSensor(2, "Temperature Sensor");
 
 void setup()
 {
@@ -24,6 +21,6 @@ void loop()
   digitalWrite(2, LOW);
   delay(1000);
   // get the temperature reading from the sensor
-  double tempReading = tempSensor.getReading();
-  Log.infoln(F("Temperature reading: %D"), tempReading);
+  // double tempReading = tempSensor.getReading();
+  // Log.infoln(F("Temperature reading: %D"), tempReading);
 }

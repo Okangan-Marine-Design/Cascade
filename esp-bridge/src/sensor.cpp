@@ -3,18 +3,17 @@
 class Sensor
 {
 public:
-    Sensor(int pin, String name); // Constructor
-    void getReading();            // Method
-    String name;                  // The name of the sensor
+    Sensor(String name, int pin) : name(name), _pin(pin)
+    {
+        pinMode(_pin, INPUT);
+    }
+    virtual ~Sensor() {}
 
-private:
-    int _pin; // Member variable
+    template <typename T>
+    T getReading(); // Sensor reading method with a template so we can return different types of data
+
+    String name;
+
+protected:
+    int _pin;
 };
-
-Sensor::Sensor(int pin, String name) // Constructor
-{
-    _pin = pin;
-    name = name;
-
-    pinMode(_pin, INPUT);
-}

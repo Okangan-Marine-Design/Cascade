@@ -16,8 +16,3 @@ double TemperatureSensor::getReading()
     double reading = abs(10 * sin(millis() / 10000.0)) + 10;
     return reading;
 }
-
-TemperatureSensor::TemperatureSensor(int pin, String name) : Sensor(pin, name)
-{
-    // nothing to do here
-}
