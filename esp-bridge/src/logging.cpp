@@ -11,7 +11,7 @@ void configureLogging(int log_level, Print &output)
     Log.setSuffix(printSuffix);
     Log.begin(log_level, &output);
     Log.setShowLevel(false);
-    Log.info("Logging configured");
+    Log.infoln("Logging configured");
 }
 
 void printPrefix(Print *_logOutput, int logLevel)

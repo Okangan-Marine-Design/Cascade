@@ -4,8 +4,7 @@
 class Sensor
 {
 public:
-    Sensor(String name, int pin);
-    virtual ~Sensor();
+    Sensor(int pin, String name) : _pin(pin), name(name) {}
 
     template <typename T>
     T getReading();

@@ -3,7 +3,6 @@
 class TemperatureSensor : public Sensor
 {
 public:
-    TemperatureSensor(int pin, String name);
-
+        using Sensor::Sensor; // Constructor
     double getReading();
 };
