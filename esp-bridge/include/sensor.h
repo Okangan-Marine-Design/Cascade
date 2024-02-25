@@ -1,6 +1,5 @@
-
+#pragma once
 #include <Arduino.h>
-
 class Sensor
 {
 public:

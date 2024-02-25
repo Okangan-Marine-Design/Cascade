@@ -1,8 +1,9 @@
+#pragma once
 #include <sensor.h>
 
 class TemperatureSensor : public Sensor
 {
 public:
-        using Sensor::Sensor; // Constructor
+    using Sensor::Sensor; // Constructor
     double getReading();
 };

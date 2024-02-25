@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+// This is the base class for all sensors SwitchSensor
 class Sensor
 {
 public:
