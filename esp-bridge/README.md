@@ -9,10 +9,10 @@ This code is the bridge between the electronics and the Jetson Orin Nano. It pas
 - Wifi Debug Portal ❌ Not yet implemented
 - Serial Communication ❌ Not yet implemented
 - Temperature Sensor ⚠️ Half implemented (sends fake data)
-- Leak Sensor ❌ Not yet implemented
+- Leak Sensor ⚠️ Half implemented (sends fake data)
 - Current Sensor ❌ Not yet implemented
 - Hydrophone ❌ Not yet implemented
-- Kill Switch ❌ Not yet implemented
+- Kill Switch ⚠️ Half implemented (sends fake data)
 - Motor Control ❌ Not yet implemented
 - LED Status ❌ Not yet implemented
 - LED Control ❌ Not yet implemented
