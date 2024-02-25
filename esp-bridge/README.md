@@ -26,23 +26,26 @@ Program Start
 2. Initialize Logging
 
 3. Initialize Sensors
-   Sensors are contained in individual files that are imported into the main program. Each sensor has its own class and methods. The general structure of the sensor class is as follows:
+   Sensors are contained in individual files that are imported into the main program. Each sensor is a derived class of the main sensor class. The general structure of the sensor class is as follows:
 
 ```c++
+// This is the base class for all sensors SwitchSensor
 class Sensor
 {
 public:
-    Sensor(int pin);   // Constructor
-    void getReading(); // Method
+    Sensor(int pin, String name) : _pin(pin), name(name) // Constructor
+    {
+        pinMode(_pin, INPUT); // Set the pin mode to input
+    }
 
-private:
-    int _pin; // Member variable
+    template <typename T>
+    T getReading(); // Sensor reading method with a template so we can return different types of data
+
+    String name; // The name of the sensor
+
+protected:
+    int _pin; // The pin the sensor is connected to
 };
-
-Sensor::Sensor(int pin) // Constructor
-{
-    _pin = pin;
-}
 ```
 
 We use polymorphism to create a common interface for all sensors. This allows us to easily add more sensors in the future.
@@ -71,3 +74,4 @@ We use polymorphism to create a common interface for all sensors. This allows us
 - Constants are all caps
 - File names are all lowercase (except for README.md)
 - For sensor files, the file name is the same as the sensor name without the word "sensor" (e.g. temperature.cpp) or (e.g. leak.cpp)
+- For sensor classes, if there is a generic type type of sensor we should try to make the code as generic as possible. For example, the kill switch sensor is a switch sensor, so we create a base class called SwitchSensor then we can instantiate a switch sensor with a pin and a name. This allows us to easily add more sensors in the future. This is much better than creating a new class for each sensor type.
