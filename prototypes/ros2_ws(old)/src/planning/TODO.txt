@@ -1,0 +1,14 @@
+Planning TODO:
+
+create main function
+create infinite loop
+
+look around at
+https://www.behaviortree.dev/
+https://github.com/BehaviorTree/awesome-behavior-trees
+
+behaviour trees are probably a better approach for this year, easier to implement
+our tasks are not incredibly complex, so it will most likely be better
+
+
+

@@ -1,0 +1,12 @@
+Sensor_server TODO:
+
+add time stamps for data? this way can discerne if sensor data is old and cannot be used?
+
+required variables:
+    left cam 
+    right cam
+    bottom cam
+    imu
+    depth sensor
+    hydrophone
+    

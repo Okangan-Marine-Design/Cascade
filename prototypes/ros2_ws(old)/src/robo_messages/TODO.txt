@@ -1,0 +1,38 @@
+robo_messages TODO:
+
+possible needed types:
+    navigation:
+        in: position (goal position)
+            vector3 global_location (x,y,z)
+            vector3 orientation (yaw, pitch, roll)
+            long time
+        out: rc_command (pixhawk messages) 
+
+    vio:
+        in: imu, stereo_images 
+            sensor_msgs/imu
+            
+            sensor_msgs/img left
+            sensor_msgs/img right
+        out: position (global of sub)
+            vector3 global_location (x,y,z)
+            vector3 orientation (yaw, pitch, roll)
+            long time
+    map:
+        in: /odometry /objects
+        out: world states?
+
+    obj_detection:
+        in: img
+            sensor_msgs/img left
+        out: objects
+            robo_messages/position (no orientation?)
+            int type
+
+    planning:
+        in: world states?
+        out: position
+
+    sensor_server:
+        in: various sensors
+        out: various sensors
