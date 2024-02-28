@@ -48,7 +48,7 @@ def copy_docs(files, destination):
 
 # generate the sidebar based on the files array and write it to the _sidebar.md file
 def generate_sidebar(files, destination='./docs'):
-    sidebar = '- [Home](/)\n'
+    sidebar = ''
     
     for file in files:
         # we want to get the relative path of the file
