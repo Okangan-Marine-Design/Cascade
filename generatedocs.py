@@ -48,9 +48,14 @@ def copy_docs(files, destination):
 
 # generate the sidebar based on the files array and write it to the _sidebar.md file
 def generate_sidebar(files, destination='./docs'):
-    sidebar = ''
+    sidebar = '- [Home](/)\n'
     
     for file in files:
+        # check if the file is called README.md if it is just that, we skip it 
+        # as this is the home page otherwise we will end up with duplicate entries
+        if file == './README.md':
+            continue
+
         # we want to get the relative path of the file
         relative_path = os.path.relpath(file, './')
         # we want to open the file find a line that starts with # and add it to the sidebar

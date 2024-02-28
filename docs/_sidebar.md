@@ -1,5 +1,4 @@
 - [Home](/)
-- [Marine Design Software](README.md)
 - [Twist Ros2_to_GZ_SIM v1.0](prototypes/gazeboMovePlugin/README.md)
 - [ORB_SLAM3_ROS2](prototypes/orbslam3_ros2/README.md)
 - [Orca4 Nav2 Plugins](prototypes/orca_nav2/README.md)
