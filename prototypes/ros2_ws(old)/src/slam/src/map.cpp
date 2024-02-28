@@ -22,12 +22,16 @@ using namespace octomap;
 using namespace octomath;
 using namespace cv_bridge;
 
-OcTree tree (0.01);
+OcTree tree (0.05);
 pose6d current_pose = pose6d(0,0,0,0,0,0);
 geometry_msgs::msg::PoseStamped lastPoseMsg;
 unsigned int current_id=0;
 bool inserted=false;
 std::shared_ptr<rclcpp::Node> node;
+
+float depth_to_meters(float d){
+    return d;
+}
 
 Pointcloud rgbd2pointcloud(const sensor_msgs::msg::Image depth){
     Pointcloud result;
@@ -44,103 +48,63 @@ Pointcloud rgbd2pointcloud(const sensor_msgs::msg::Image depth){
     //Camera1.fy: 617.362
     //Camera1.cx: 324.637
     //Camera1.cy: 242.462
-    double cx = 242.462;
-    double cy = 324.637;
-    double fx_inv = 1.0 / 617.201;
-    double fy_inv = 1.0 / 617.362;
+    double cx = 320;
+    double cy = 240;
+    double fx_inv = 1.0 / 554;
+    double fy_inv = 1.0 / 554;
     float temp_x,temp_y,temp_z;
     for (int u = 0; u < w; ++u){
+    auto rowstart = node->now();
     for (int v = 0; v < h; ++v){
-        int z = depth_img.at<int>(v, u);   
-        if (z != 0){  
-            double z_metric = z * 0.000001;
-        
-            temp_x = z_metric * ((u - cx) * fx_inv)/1000;
-            temp_y = z_metric * ((v - cy) * fy_inv)/1000;
-            temp_z = z_metric / 1000;  
-        }
-        else{
-                temp_x = temp_y = temp_z = std::numeric_limits<float>::quiet_NaN();
-            }
+        float z = depth_to_meters(depth_img.at<float>(v, u));   
+        if (z > 0 && z < 10){  
+            temp_x = z * ((u - cx) * fx_inv);
+            temp_y = z * ((v - cy) * fy_inv);
+            temp_z = z;  
             result.push_back(temp_x,temp_y,temp_z);
+            }
         }  
+        auto rowend = node->now();
+        auto rowdiff = rowend - rowstart;
+        //RCLCPP_INFO(node->get_logger(), "inserted column %.i in time(sec) : %.4f",u, rowdiff.seconds());
     }
     result.transform(current_pose);//changes relative pose to absolute pose
     return result;
 }
 
-double depth_to_meters(int d){
-    return d/25.0;
-}
+void printEulerPose(const geometry_msgs::msg::PoseStamped& msgP) {
+    geometry_msgs::msg::Quaternion msg=msgP.pose.orientation;
+    // Placeholder implementations for getRoll, getPitch, and getYaw
+    double roll = atan2(2.0 * (msg.w * msg.x + msg.y * msg.z),
+                        1.0 - 2.0 * (msg.x * msg.x + msg.y * msg.y));
+    double pitch = asin(2.0 * (msg.w * msg.y - msg.z * msg.x));
+    double yaw = atan2(2.0 * (msg.w * msg.z + msg.x * msg.y),
+                       1.0 - 2.0 * (msg.y * msg.y + msg.z * msg.z));
 
-void slowDepthInsert(const sensor_msgs::msg::Image depth){
-    cv::Mat depth_img = cv_bridge::toCvCopy(depth)->image;
-    int w = depth_img.cols;
-    int h = depth_img.rows;
-    //Camera1.fx: 617.201
-    //Camera1.fy: 617.362
-    //Camera1.cx: 324.637
-    //Camera1.cy: 242.462
-    double cx = 320;
-    double cy = 240;
-    double fx_inv = 1.0 / 554;
-    double fy_inv = 1.0 / 554;
-    auto start = node->now();
-    float temp_x,temp_y,temp_z;
-    for (int u = 0; u < w; ++u){
-
-    auto rowstart = node->now();
-    for (int v = 0; v < h; ++v){
-        float z = depth_img.at<float>(v, u);   
-        //RCLCPP_INFO(node->get_logger(), "depth @ %.i , %.i: %.4f", v,u,z);
-        if (z != 0){  
-            temp_x = z * (u - cx) * fx_inv;
-            temp_y = z * (v - cy) * fy_inv;
-            temp_z = z;  
-        }
-        else{
-                temp_x = temp_y = temp_z = std::numeric_limits<float>::quiet_NaN();
-            }
-
-            Vector3 endPoint=Vector3(temp_x,temp_y,temp_z);
-            tree.insertRay(current_pose.trans(),current_pose.transform(endPoint));
-        }  
-        auto rowend = node->now();
-        auto rowdiff = rowend - rowstart;
-        RCLCPP_INFO(node->get_logger(), "inserted column %.i in time(sec) : %.4f",u, rowdiff.seconds());
-    }
-    auto end = node->now();
-    auto diff = end - start;
-    RCLCPP_INFO(node->get_logger(), "update map time(sec) : %.4f", diff.seconds());
+    // Print Euler angles
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Euler Pose: Roll: %.1f, Pitch: %.1f, Yaw: %.1f",roll,pitch,yaw);
 }
 
 void rgbd_subscription_callback(const robo_messages::msg::RGBD &msg){
-    slowDepthInsert(msg.depth);
-    if(inserted){
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got rgbd!");
-        Pointcloud pc = rgbd2pointcloud(msg.depth);
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "converted to point cloud!");
-        ScanNode scan(&pc,current_pose,current_id++);
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "created scan!");
-        tree.insertPointCloud(scan);
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "inserted scan!");
-    }
-    tree.write(string("testOC.ot"));
-    //inserted=true;
-    //std::cout<<"added scan\n";
+    //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got rgbd!");
+    Pointcloud pc = rgbd2pointcloud(msg.depth);
+    //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "converted to point cloud!");
+    tree.insertPointCloud(pc,current_pose.trans());
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Tree Volume: %.4f",tree.volume());
 }
 
 void odometry_subscription_callback(const geometry_msgs::msg::PoseStamped &msg){
     current_pose=Pose6D(Vector3(
-                                    msg.pose.position.x*100,
-                                    msg.pose.position.y*100,
-                                    msg.pose.position.z*100),
+                                    msg.pose.position.x,
+                                    msg.pose.position.y,
+                                    msg.pose.position.z),
                         Quaternion(
                                     msg.pose.orientation.w,
                                     msg.pose.orientation.x,
                                     msg.pose.orientation.y,
                                     msg.pose.orientation.z)
                         );
+    //printEulerPose(msg);
     lastPoseMsg=msg;
 }
 
@@ -175,7 +139,7 @@ int main(int argc, char **argv)
             "created map node!");
         
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr odometry_subscription=
-    node->create_subscription<geometry_msgs::msg::PoseStamped>("/pose",10, &odometry_subscription_callback);
+    node->create_subscription<geometry_msgs::msg::PoseStamped>("/model/box/pose",10, &odometry_subscription_callback);
 
     rclcpp::Subscription<robo_messages::msg::RGBD>::SharedPtr rgbd_subscription=
     node->create_subscription<robo_messages::msg::RGBD>("/front_rgbd",10, &rgbd_subscription_callback);
@@ -191,6 +155,7 @@ int main(int argc, char **argv)
 
     rclcpp::spin(node);
     rclcpp::shutdown();
+    tree.write(string("testOC.ot"));
 
     return 0;
 }
