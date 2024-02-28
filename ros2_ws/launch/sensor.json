@@ -1,0 +1,25 @@
+{
+  "sensor_readings": [
+    {
+      "sensor_type": "temperature",
+      "value": 25.3,
+      "unit": "Celsius"
+    },
+    {
+      "sensor_type": "dvl_reading",
+      "value": {
+        "velocity": {
+          "x": 0.2,
+          "y": -0.1,
+          "z": 0.5
+        }
+      },
+      "unit": "m/s"
+    },
+    {
+      "sensor_type": "depth",
+      "value": 10.7,
+      "unit": "meters"
+    }
+  ]
+}

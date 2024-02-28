@@ -15,14 +15,14 @@ add_executable(serial_intake
 
 ament_target_dependencies(serial_intake rclcpp std_msgs)
 
-add_executable(sensor
-  src/sensor.cpp)
+add_executable(json_parser
+  src/json_parser.cpp)
 
-ament_target_dependencies(sensor rclcpp std_msgs)
+ament_target_dependencies(json_parser rclcpp std_msgs)
 
 install(TARGETS
   serial_intake
-  sensor
+  json_parser
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
