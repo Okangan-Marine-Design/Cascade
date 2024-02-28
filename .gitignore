@@ -4,7 +4,6 @@ build/
 .cmake
 .make
 CMakeFiles/
-ORB_SLAM3/
 ros2_ws/install/
 install/
 oktech/
