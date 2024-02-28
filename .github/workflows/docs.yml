@@ -1,0 +1,21 @@
+name: Generate Docs
+on: [push]
+
+jobs:
+    generate_docs:
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout
+          uses: actions/checkout@v2
+
+        - name: Generate Docs
+          uses: actions/setup-python@v4
+          with:
+            python-version: '3.x'
+        - run: python3 generatedocs.py
+
+        - uses: tool3/docsify-action@master
+          with:
+            github_token: ${{ secrets.GP_TOKEN }}
+
+            
