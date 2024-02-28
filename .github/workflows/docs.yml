@@ -14,8 +14,12 @@ jobs:
             python-version: '3.x'
         - run: python3 generatedocs.py
 
-        - uses: tool3/docsify-action@master
+        - name: Deploy Docs
+          uses: peaceiris/actions-gh-pages@v3
           with:
-            github_token: ${{ secrets.GP_TOKEN }}
+            personal_token: ${{ secrets.GITHUB_TOKEN }}
+            publish_dir: ./docs
+            publish_branch: gh-pages
+          
 
             
