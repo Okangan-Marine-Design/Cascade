@@ -1,8 +1,7 @@
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
-#include "std_msgs/msg/float64.hpp"
-#include "std_msgs/msg/int32.hpp"
+#include "std_msgs/msg/float32.hpp"
 #include <nlohmann/json.hpp>
 
 using std::placeholders::_1;
@@ -52,10 +51,14 @@ private:
 
     void publishPrimitive(const std::string& topic, const json& value) {
         // Publish primitive types
-        auto publisher = this->create_publisher<std_msgs::msg::String>(topic, 10);
-        auto message = std_msgs::msg::String();
-        message.data = value.dump();
-        publisher->publish(message);
+
+        if(sensorPublisherMap.count(topic)==0){
+            auto publisher = this->create_publisher<std_msgs::msg::Float32>(topic, 10);
+            sensorPublisherMap.insert(std::pair{topic,publisher});
+        }
+        auto message = std_msgs::msg::Float32();
+        message.data = std::stof(value.dump());
+        sensorPublisherMap[topic]->publish(message);
     }   
 
     void json_callback(std_msgs::msg::String::SharedPtr msg)
@@ -65,7 +68,7 @@ private:
         json jsonObject = json::parse(msg->data);
         Json_Parser::publishSensorReadings(jsonObject);
     }
-
+    std::map<std::string, rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr> sensorPublisherMap;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
 };
 
