@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 add_executable(serial_intake
   src/serial_intake.cpp)
@@ -20,9 +21,15 @@ add_executable(json_parser
 
 ament_target_dependencies(json_parser rclcpp std_msgs)
 
+add_executable(image_publisher
+  src/image_publisher.cpp)
+
+ament_target_dependencies(image_publisher rclcpp std_msgs sensor_msgs)
+
 install(TARGETS
   serial_intake
   json_parser
+  image_publisher
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

@@ -12,6 +12,11 @@ def generate_launch_description():
             package='hardware_integration',
             executable='json_parser',
             name='json_parser'
-        )
+        ),
+        Node(
+            package='hardware_integration',
+            executable='image_publisher',
+            name='image_publisher'
+        ),
         ]
     )
