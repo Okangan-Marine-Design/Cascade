@@ -53,7 +53,7 @@ private:
         // Publish primitive types
 
         if(sensorPublisherMap.count(topic)==0){
-            auto publisher = this->create_publisher<std_msgs::msg::Float32>(topic, 10);
+            auto publisher = this->create_publisher<std_msgs::msg::Float32>("/sensors/"+topic, 10);
             sensorPublisherMap.insert(std::pair{topic,publisher});
         }
         auto message = std_msgs::msg::Float32();

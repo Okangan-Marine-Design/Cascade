@@ -10,6 +10,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(cv_bridge REQUIRED)
 
 add_executable(serial_intake
   src/serial_intake.cpp)
@@ -24,7 +26,7 @@ ament_target_dependencies(json_parser rclcpp std_msgs)
 add_executable(image_publisher
   src/image_publisher.cpp)
 
-ament_target_dependencies(image_publisher rclcpp std_msgs sensor_msgs)
+ament_target_dependencies(image_publisher rclcpp std_msgs sensor_msgs cv_bridge OpenCV)
 
 install(TARGETS
   serial_intake

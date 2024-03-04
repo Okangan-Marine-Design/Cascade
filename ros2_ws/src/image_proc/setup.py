@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'object_detection'
+package_name = 'image_proc'
 
 setup(
     name=package_name,
@@ -20,7 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'yolo = object_detection.yolo:main',
+            'depth_map = image_proc.depth_pub:main',
+            'background_remover = image_proc.background_remover:main',
+            'depth_labeler = image_proc.depth_labeler:main',
         ],
     },
 )

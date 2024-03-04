@@ -1,4 +1,3 @@
-
 #include <chrono>
 #include <memory>
 #include <string>
@@ -7,9 +6,11 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
+#include <cv_bridge/cv_bridge.hpp>
+#include <opencv2/opencv.hpp>
 
 using namespace std::chrono_literals;
-std::string filename = "image.png"; 
+std::string filename = "image.jpg"; 
 
 class ImagePublisherNode : public rclcpp::Node
 {
@@ -33,24 +34,12 @@ private:
     // Method to fetch image data from a file and populate the Image message
     void fetchImageDataFromFile(const std::string& filename, sensor_msgs::msg::Image& imageMsg)
     {
-        // Your implementation to read image data from file and populate imageMsg
-        // Example:
-        // Read image file and fill in imageMsg data, width, height, encoding, etc.
-        // For simplicity, let's assume it's already implemented
-        // Here you would read the image file and populate imageMsg data
-        // For demonstration purposes, we'll just set some dummy data
-
-        // Set width and height of the image
-        imageMsg.width = 640;
-        imageMsg.height = 480;
-
-        // Set encoding (e.g., "rgb8", "bgr8", etc.)
-        imageMsg.encoding = "rgb8";
-
-        // Set some dummy image data (replace with actual image data)
-        // For simplicity, we'll just set all pixel values to 0
-        int dataSize = imageMsg.width * imageMsg.height * 3;
-        imageMsg.data.resize(dataSize, 0);
+        cv::Mat image = cv::imread(filename);
+        
+        if(!image.empty()) {
+            cv_bridge::CvImage cvbImage=cv_bridge::CvImage(std_msgs::msg::Header(),std::string("rgb8"),image);
+            cvbImage.toImageMsg(imageMsg);
+        }
     }
 
     rclcpp::TimerBase::SharedPtr timer_;
