@@ -11,17 +11,21 @@
 #include <tf2/LinearMath/Vector3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include "message_filters/subscriber.h"
-#include "message_filters/time_synchronizer.h"
+#include "message_filters/synchronizer.h"
+#include <message_filters/sync_policies/approximate_time.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 using namespace std;
 using namespace octomap;
 using namespace octomath;
 using namespace cv_bridge;
+using std::placeholders::_1;
+using std::placeholders::_2;
+
+typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, geometry_msgs::msg::PoseStamped> approximate_policy;
 
 OcTree tree (0.05);
 pose6d current_pose = pose6d(0,0,0,0,0,0);
-geometry_msgs::msg::PoseStamped lastPoseMsg;
 unsigned int current_id=0;
 bool inserted=false;
 std::shared_ptr<rclcpp::Node> node;
@@ -69,25 +73,20 @@ Pointcloud rgbd2pointcloud(const sensor_msgs::msg::Image depth){
     return result;
 }
 
-void depth_subscription_callback(const sensor_msgs::msg::Image &msg){
-    Pointcloud pc = rgbd2pointcloud(msg.depth);
+void synced_subscription_callback(const sensor_msgs::msg::Image &depth_msg, const geometry_msgs::msg::PoseStamped pose_msg){
+    current_pose=Pose6D(Vector3(
+                                    pose_msg.pose.position.x,
+                                    pose_msg.pose.position.y,
+                                    pose_msg.pose.position.z),
+                        Quaternion(
+                                    pose_msg.pose.orientation.w,
+                                    pose_msg.pose.orientation.x,
+                                    pose_msg.pose.orientation.y,
+                                    pose_msg.pose.orientation.z)
+                        );
+    Pointcloud pc = rgbd2pointcloud(depth_msg);
     tree.insertPointCloud(pc,current_pose.trans());
     //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Tree Volume: %.4f",tree.volume());
-}
-
-void odometry_subscription_callback(const geometry_msgs::msg::PoseStamped &msg){
-    current_pose=Pose6D(Vector3(
-                                    msg.pose.position.x,
-                                    msg.pose.position.y,
-                                    msg.pose.position.z),
-                        Quaternion(
-                                    msg.pose.orientation.w,
-                                    msg.pose.orientation.x,
-                                    msg.pose.orientation.y,
-                                    msg.pose.orientation.z)
-                        );
-    //printEulerPose(msg);
-    lastPoseMsg=msg;
 }
 
 int main(int argc, char **argv)
@@ -95,19 +94,23 @@ int main(int argc, char **argv)
     rclcpp::init(argc, argv);
 
     //creates node as shared pointer
-    node = rclcpp::Node::make_shared("map");
+    node = rclcpp::Node::make_shared("octomap_server");
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), 
-            "created octomap node!");
+            "created octomap_server node!");
         
-    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr odometry_subscription=
-    node->create_subscription<geometry_msgs::msg::PoseStamped>("/pose",10, &odometry_subscription_callback);
+    message_filters::Subscriber<geometry_msgs::msg::PoseStamped> pose_subscriber;
+    pose_subscriber.subscribe(node,"/pose");
+    message_filters::Subscriber<sensor_msgs::msg::Image> depth_subscriber;
+    pose_subscriber.subscribe(node,"/semantic_depth");
 
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr rgbd_subscription=
-    node->create_subscription<sensor_msgs::msg::Image>("/semantic_depth",10, &depth_subscription_callback);
+    std::shared_ptr<message_filters::Synchronizer<approximate_policy>> sync(approximate_policy(10), depth_subscriber, pose_subscriber);
     
+    sync->registerCallback(std::bind(&synced_subscription_callback, node, _1, _2));
+
     rclcpp::spin(node);
     rclcpp::shutdown();
     tree.write(string("test.ot"));
 
     return 0;
 }
+//TODO: convert whole file to object later
