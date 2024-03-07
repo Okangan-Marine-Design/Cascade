@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'mission_planning'
+package_name = 'sensor_processing'
 
 setup(
     name=package_name,
@@ -20,7 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "planner=mission_planning.planner:main"
+            'dvl=sensor_processing.Dvl:main',
+            'imu=sensor_processing.Imu:main',
+            'water_depth=sensor_processing.WaterDepth:main'
         ],
     },
 )

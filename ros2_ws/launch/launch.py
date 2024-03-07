@@ -36,5 +36,30 @@ def generate_launch_description():
             package='image_proc',
             executable='depth_labeler',
         ),
+        Node(
+            package='mapping',
+            executable='octomap_server',
+        ),
+        Node(
+            package='localization',
+            executable='dead_reckoning',
+        ),
+        Node(
+            package='sensor_processing',
+            executable='dvl',
+        ),
+        Node(
+            package='sensor_processing',
+            executable='imu',
+        ),
+        Node(
+            package='sensor_processing',
+            executable='water_depth',
+        ),
+        Node(
+            package='mission_planning',
+            executable='planner',
+        ),
+
         ]
     )

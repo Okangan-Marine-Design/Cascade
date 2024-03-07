@@ -17,7 +17,7 @@ class ImagePublisherNode : public rclcpp::Node
 public:
     ImagePublisherNode() : Node("image_publisher_node")
     { 
-        publisher_ = this->create_publisher<sensor_msgs::msg::Image>("/hardware/rawImage", 10);
+        publisher_ = this->create_publisher<sensor_msgs::msg::Image>("/sensors/camera/rgb", 10);
         timer_ = this->create_wall_timer(
             500ms, std::bind(&ImagePublisherNode::timer_callback, this));
     }

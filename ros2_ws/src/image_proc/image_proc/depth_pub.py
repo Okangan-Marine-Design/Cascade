@@ -7,7 +7,7 @@ import cv2
 
 class DepthMapNode(image_node.ImageNode):
     def __init__(self):
-        super().__init__ (pub_topic="/hardware/depth_map", name="depth_map_pub")
+        super().__init__ (pub_topic="/sensors/camera/depth_map", name="depth_map_pub")
 
 def main(args=None):
     rclpy.init(args=args)
@@ -18,3 +18,5 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+##probably a temp file, something else will publish depth map data

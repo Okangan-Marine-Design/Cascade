@@ -9,7 +9,7 @@ from message_filters import ApproximateTimeSynchronizer, Subscriber
 
 class YoloNode(image_node.ImageNode):
     def __init__(self):
-        super().__init__(sub_topic="/hardware/rawImage",  pub_topic="/labeled_image", name="yolo")
+        super().__init__(sub_topic="/sensors/camera/rgb",  pub_topic="/labeled_image", name="yolo")
 
     def inference():
         boundingBoxes={}

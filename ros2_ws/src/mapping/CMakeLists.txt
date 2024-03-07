@@ -8,6 +8,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(cascade_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(image_transport REQUIRED)
@@ -23,7 +24,12 @@ add_executable(octomap_server
 )
 
 target_link_libraries(octomap_server ${OCTOMAP_LIBRARIES})
-ament_target_dependencies(octomap_server octomap rclcpp sensor_msgs geometry_msgs cv_bridge message_filters tf2 tf2_ros image_transport tf2_geometry_msgs OpenCV)
+ament_target_dependencies(octomap_server octomap rclcpp sensor_msgs geometry_msgs cv_bridge message_filters tf2 tf2_ros image_transport tf2_geometry_msgs OpenCV cascade_msgs)
+
+install(TARGETS
+  octomap_server
+  DESTINATION lib/${PROJECT_NAME})
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'mission_planning'
+package_name = 'localization'
 
 setup(
     name=package_name,
@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "planner=mission_planning.planner:main"
+            'dead_reckoning = localization.dead_reckoning_node:main'
         ],
     },
 )

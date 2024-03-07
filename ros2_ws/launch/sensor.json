@@ -1,21 +1,26 @@
 {
-    "temperature":{
-      "value": 25.3,
-      "unit": "Celsius"
-    },
-    
+    "temperature":25.2,
       "dvl":{
-      "value": {
         "velocity": {
           "x": 0.2,
           "y": -0.1,
           "z": 0.5
         }
-      },
-      "unit": "m/s"
     },
-     "depth":{
-      "value": 10.7,
-      "unit": "meters"
-    }
+     "depth": 10.7
+    ,
+    "imu":{
+        "angular": {
+          "x": 0.2,
+          "y": -0.1,
+          "z": 0.5
+        },
+        "linear": {
+          "x": 0.2,
+          "y": -0.1,
+          "z": 0.5
+        }
+    },
+    "status":1,
+    "battery_voltage":16.6
   }

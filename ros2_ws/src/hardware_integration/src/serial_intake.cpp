@@ -5,7 +5,7 @@
 #include <fstream>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
+#include "cascade_msgs/msg/json_stamped.hpp"
 
 using namespace std::chrono_literals;
 std::string filename = "sensor.json"; 
@@ -15,7 +15,7 @@ class SerialIntakeNode : public rclcpp::Node
     public:
         SerialIntakeNode() : Node("serial_intake_node")
         { 
-            publisher_ = this->create_publisher<std_msgs::msg::String>("/hardware/rawJson", 10);
+            publisher_ = this->create_publisher<cascade_msgs::msg::JsonStamped>("/hardware/rawJson", 10);
             timer_ = this->create_wall_timer(
                 500ms, std::bind(&SerialIntakeNode::timer_callback, this));
         }
@@ -39,12 +39,14 @@ class SerialIntakeNode : public rclcpp::Node
 
         void timer_callback()
         {
-            auto message = std_msgs::msg::String();
+            auto message = cascade_msgs::msg::JsonStamped();
             message.data = fetchJsonStringFromFile(filename);
+            message.header.frame_id="map";
+            message.header.stamp= this->now();
             publisher_->publish(message);
         }
         rclcpp::TimerBase::SharedPtr timer_;
-        rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
+        rclcpp::Publisher<cascade_msgs::msg::JsonStamped>::SharedPtr publisher_;
 };
 
 
