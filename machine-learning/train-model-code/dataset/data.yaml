@@ -1,0 +1,13 @@
+train: /content/drive/MyDrive/train-model-code/dataset/train/images
+val: /content/drive/MyDrive/train-model-code/dataset/valid/images
+test: /content/drive/MyDrive/train-model-code/dataset/test/images
+
+nc: 2
+names: ['buoy', 'gate']
+
+roboflow:
+  workspace: auv2024
+  project: front-comp-dataset
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/auv2024/front-comp-dataset/dataset/1
