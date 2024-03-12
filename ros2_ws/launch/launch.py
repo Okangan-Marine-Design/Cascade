@@ -60,6 +60,18 @@ def generate_launch_description():
             package='mission_planning',
             executable='planner',
         ),
+        Node(
+            package='navigation',
+            executable='navigator',
+        ),
+        Node(
+            package='navigation',
+            executable='motion_planner',
+        ),
+        Node(
+            package='hardware_integration',
+            executable='motor_cortex',
+        ),
 
         ]
     )

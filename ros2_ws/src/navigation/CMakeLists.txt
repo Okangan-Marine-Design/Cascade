@@ -7,9 +7,25 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(cascade_msgs REQUIRED)
+
+add_executable(navigator
+  src/navigator.cpp)
+
+add_executable(motion_planner
+  src/motion_planner.cpp)
+
+ament_target_dependencies(navigator rclcpp std_msgs sensor_msgs cascade_msgs geometry_msgs)
+ament_target_dependencies(motion_planner rclcpp std_msgs sensor_msgs cascade_msgs geometry_msgs)
+
+install(TARGETS
+  navigator
+  motion_planner
+  DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
