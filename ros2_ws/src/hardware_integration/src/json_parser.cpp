@@ -7,14 +7,14 @@
 using std::placeholders::_1;
 using json = nlohmann::json;
 
-class Json_Parser : public rclcpp::Node
+class JsonParserNode : public rclcpp::Node
 {
 public:
-    Json_Parser()
+    JsonParserNode()
     : Node("json_parser")
     {
         subscription_ =
-            this->create_subscription<cascade_msgs::msg::JsonStamped>("/hardware/rawJson", 10, std::bind(&Json_Parser::json_callback, this, _1));
+            this->create_subscription<cascade_msgs::msg::JsonStamped>("/hardware/rawJson", 10, std::bind(&JsonParserNode::json_callback, this, _1));
         //must bind callback for some reason?
         RCLCPP_INFO(this->get_logger(), "created json parser node");
     }
@@ -67,7 +67,7 @@ private:
         //parse json data
         //should auto loop through all elemements of the json data and publish to a topic automatically, ie create a topic based on the name of the sensor, so would not need to be pre defined
         json jsonObject = json::parse(raw.data);
-        Json_Parser::publishSensorReadings(jsonObject, raw);
+        JsonParserNode::publishSensorReadings(jsonObject, raw);
     }
     std::map<std::string, rclcpp::Publisher<cascade_msgs::msg::SensorReading>::SharedPtr> sensorPublisherMap;
     rclcpp::Subscription<cascade_msgs::msg::JsonStamped>::SharedPtr subscription_;
@@ -76,7 +76,7 @@ private:
 int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<Json_Parser>());
+    rclcpp::spin(std::make_shared<JsonParserNode>());
     rclcpp::shutdown();
     return 0;
 }

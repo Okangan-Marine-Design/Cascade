@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'dvl=sensor_processing.Dvl:main',
+            'pid=sensor_processing.PIDController:main',
             'imu=sensor_processing.Imu:main',
             'water_depth=sensor_processing.WaterDepth:main'
         ],
