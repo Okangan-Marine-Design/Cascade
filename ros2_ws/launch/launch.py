@@ -69,7 +69,7 @@ def generate_launch_description():
             executable='motion_planner',
         ),
         Node(
-            package='hardware_integration',
+            package='navigation',
             executable='motor_cortex',
         ),
         Node(
@@ -77,9 +77,9 @@ def generate_launch_description():
             executable='pid',
             name='yaw_pid_controller',
             remappings=[
-                ('/PID/target/XXX', '/PID/target/yaw'),
-                ('/PID/actual/XXX', '/PID/actual/yaw'),
-                ('/PID/correction/XXX', '/PID_correction/yaw')
+                ('/PID/XXX/target', '/PID/yaw/target'),
+                ('/PID/XXX/actual', '/PID/yaw/actual'),
+                ('/PID_correction/XXX', '/PID_correction/yaw')
             ]
         ),
         Node(
@@ -87,9 +87,9 @@ def generate_launch_description():
             executable='pid',
             name='pitch_pid_controller',
             remappings=[
-                ('/PID/target/XXX', '/PID/target/pitch'),
-                ('/PID/actual/XXX', '/PID/actual/pitch'),
-                ('/PID/correction/XXX', '/PID_correction/pitch')
+                ('/PID/XXX/target', '/PID/pitch/target'),
+                ('/PID/XXX/actual', '/PID/pitch/actual'),
+                ('/PID_correction/XXX', '/PID_correction/pitch')
             ]
         ),
         Node(
@@ -97,9 +97,9 @@ def generate_launch_description():
             executable='pid',
             name='roll_pid_controller',
             remappings=[
-                ('/PID/target/XXX', '/PID/target/roll'),
-                ('/PID/actual/XXX', '/PID/actual/roll'),
-                ('/PID/correction/XXX', '/PID_correction/roll')
+                ('/PID/XXX/target', '/PID/roll/target'),
+                ('/PID/XXX/actual', '/PID/roll/actual'),
+                ('/PID_correction/XXX', '/PID_correction/roll')
             ]
         ),
         Node(
@@ -107,9 +107,9 @@ def generate_launch_description():
             executable='pid',
             name='surge_pid_controller',
             remappings=[
-                ('/PID/target/XXX', '/PID/target/surge'),
-                ('/PID/actual/XXX', '/PID/actual/surge'),
-                ('/PID/correction/XXX', '/PID_correction/surge')
+                ('/PID/XXX/target', '/PID/surge/target'),
+                ('/PID/XXX/actual', '/PID/surge/actual'),
+                ('/PID_correction/XXX', '/PID_correction/surge')
             ]
         ),
         Node(
@@ -117,9 +117,9 @@ def generate_launch_description():
             executable='pid',
             name='sway_pid_controller',
             remappings=[
-                ('/PID/target/XXX', '/PID/target/sway'),
-                ('/PID/actual/XXX', '/PID/actual/sway'),
-                ('/PID/correction/XXX', '/PID_correction/sway')
+                ('/PID/XXX/target', '/PID/sway/target'),
+                ('/PID/XXX/actual', '/PID/sway/actual'),
+                ('/PID_correction/XXX', '/PID_correction/sway')
             ]
         ),
         Node(
@@ -127,10 +127,14 @@ def generate_launch_description():
             executable='pid',
             name='heave_pid_controller',
             remappings=[
-                ('/PID/target/XXX', '/PID/target/heave'),
-                ('/PID/actual/XXX', '/PID/actual/heave'),
-                ('/PID/correction/XXX', '/PID_correction/heave')
+                ('/PID/XXX/target', '/PID/heave/target'),
+                ('/PID/XXX/actual', '/PID/heave/actual'),
+                ('/PID_correction/XXX', '/PID_correction/heave')
             ]
+        ),
+        Node(
+            package='sensor_processing',
+            executable='pid_combiner',
         ),
         ]
     )

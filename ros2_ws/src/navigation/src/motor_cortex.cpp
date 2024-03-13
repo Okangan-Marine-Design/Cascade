@@ -24,12 +24,12 @@ class MotorCortexNode : public rclcpp::Node
 
             //adds all publishers to a map
             
-            pidPublisherMap.insert(std::pair{"yaw", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/target/yaw", 10)});
-            pidPublisherMap.insert(std::pair{"pitch", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/target/pitch", 10)});
-            pidPublisherMap.insert(std::pair{"roll", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/target/roll", 10)});
-            pidPublisherMap.insert(std::pair{"surge", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/target/surge", 10)});
-            pidPublisherMap.insert(std::pair{"sway", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/target/sway", 10)});
-            pidPublisherMap.insert(std::pair{"heave", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/target/heave", 10)});
+            pidPublisherMap.insert(std::pair{"yaw", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/yaw/target", 10)});
+            pidPublisherMap.insert(std::pair{"pitch", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/pitch/target", 10)});
+            pidPublisherMap.insert(std::pair{"roll", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/roll/target", 10)});
+            pidPublisherMap.insert(std::pair{"surge", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/surge/target", 10)});
+            pidPublisherMap.insert(std::pair{"sway", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/sway/target", 10)});
+            pidPublisherMap.insert(std::pair{"heave", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/heave/target", 10)});
 
         }
     private:

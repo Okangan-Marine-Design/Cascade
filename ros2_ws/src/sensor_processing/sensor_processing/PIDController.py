@@ -9,13 +9,13 @@ class PIDNode(Node):
         queue_size=20
         acceptable_delay=0.1 #this is how many seconds of difference we allow between the 2 subscriptions before theyre considered not matching
         tss = ApproximateTimeSynchronizer(
-            [Subscriber(self, SensorReading, "/PID/target/XXX"),
-            Subscriber(self, SensorReading, "/PID/actual/XXX"),
+            [Subscriber(self, SensorReading, "/PID/XXX/target"),
+            Subscriber(self, SensorReading, "/PID/XXX/actual"),
             ],
             queue_size,
             acceptable_delay)
         tss.registerCallback(self.synced_callback)
-        self.publisher_ = self.create_publisher(SensorReading, '/PID/correction/XXX', 10)
+        self.publisher_ = self.create_publisher(SensorReading, '/PID_correction/XXX', 10)
 
     def synced_callback(self, target_msg, actual_msg):
         msg=SensorReading()

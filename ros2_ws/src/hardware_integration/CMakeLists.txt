@@ -24,10 +24,6 @@ add_executable(json_parser
 
 ament_target_dependencies(json_parser rclcpp std_msgs cascade_msgs)
 
-add_executable(motor_cortex
-  src/motor_cortex.cpp)
-
-ament_target_dependencies(motor_cortex rclcpp std_msgs cascade_msgs)
 
 add_executable(image_publisher
   src/image_publisher.cpp)
@@ -38,7 +34,6 @@ install(TARGETS
   serial_intake
   json_parser
   image_publisher
-  motor_cortex
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

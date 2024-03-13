@@ -12,12 +12,12 @@ class DeadReckoningNode(Node):
         super().__init__("Dead_Reckoning_Node")
         self.pose_publisher_ = self.create_publisher(Pose, "/pose", 10)
         self.pidPublisherMap={}
-        self.pidPublisherMap["yaw"] = self.create_publisher(SensorReading, "/PID/actual/yaw", 10)
-        self.pidPublisherMap["pitch"] = self.create_publisher(SensorReading, "/PID/actual/pitch", 10)
-        self.pidPublisherMap["roll"] = self.create_publisher(SensorReading, "/PID/actual/roll", 10)
-        self.pidPublisherMap["surge"] = self.create_publisher(SensorReading, "/PID/actual/surge", 10)
-        self.pidPublisherMap["sway"] = self.create_publisher(SensorReading, "/PID/actual/sway", 10)
-        self.pidPublisherMap["heave"] = self.create_publisher(SensorReading, "/PID/actual/heave", 10)
+        self.pidPublisherMap["yaw"] = self.create_publisher(SensorReading, "/PID/yaw/actual", 10)
+        self.pidPublisherMap["pitch"] = self.create_publisher(SensorReading, "/PID/pitch/actual", 10)
+        self.pidPublisherMap["roll"] = self.create_publisher(SensorReading, "/PID/roll/actual", 10)
+        self.pidPublisherMap["surge"] = self.create_publisher(SensorReading, "/PID/surge/actual", 10)
+        self.pidPublisherMap["sway"] = self.create_publisher(SensorReading, "/PID/sway/actual", 10)
+        self.pidPublisherMap["heave"] = self.create_publisher(SensorReading, "/PID/heave/actual", 10)
         self.get_logger().debug('Started Dead_Reckoning_Node')
         queue_size=20
         acceptable_delay=0.1 #this is how many seconds of difference we allow between the 2 subscriptions before theyre considered not matching

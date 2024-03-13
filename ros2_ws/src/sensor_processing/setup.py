@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             'dvl=sensor_processing.Dvl:main',
             'pid=sensor_processing.PIDController:main',
+            'pid_combiner=sensor_processing.PIDCombiner:main',
             'imu=sensor_processing.Imu:main',
             'water_depth=sensor_processing.WaterDepth:main'
         ],

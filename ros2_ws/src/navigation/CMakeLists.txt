@@ -19,12 +19,18 @@ add_executable(navigator
 add_executable(motion_planner
   src/motion_planner.cpp)
 
+add_executable(motor_cortex
+  src/motor_cortex.cpp)
+
+ament_target_dependencies(motor_cortex rclcpp std_msgs cascade_msgs)
+
 ament_target_dependencies(navigator rclcpp std_msgs sensor_msgs cascade_msgs geometry_msgs)
 ament_target_dependencies(motion_planner rclcpp std_msgs sensor_msgs cascade_msgs geometry_msgs)
 
 install(TARGETS
   navigator
   motion_planner
+  motor_cortex
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
