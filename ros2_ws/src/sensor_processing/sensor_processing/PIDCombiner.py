@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from cascade_msgs.msg import SensorReading
+from cascade_msgs.msg import MotorThrottle
 from message_filters import ApproximateTimeSynchronizer, Subscriber
 
 class PIDCombinerNode(Node):
@@ -19,10 +20,22 @@ class PIDCombinerNode(Node):
             queue_size,
             acceptable_delay)
         tss.registerCallback(self.synced_callback)
-        #self.publisher_ = self.create_publisher(Imu, '/sensors/imu', 10)
+        self.publisher_ = self.create_publisher(MotorThrottle, '/motor_throttle', 10)
 
     def synced_callback(self, yaw_msg, pitch_msg, roll_msg, surge_msg, sway_msg, heave_msg):
-        pass
+        motor_msg=MotorThrottle()
+        #adding up corresponding pid values for each motor
+        motor_msg.fli= heave_msg.data + roll_msg.data + pitch_msg.data
+        motor_msg.fri= heave_msg.data - roll_msg.data + pitch_msg.data
+        motor_msg.bli= heave_msg.data + roll_msg.data - pitch_msg.data
+        motor_msg.bri= heave_msg.data - roll_msg.data - pitch_msg.data
+
+        motor_msg.flo= surge_msg.data + sway_msg.data + yaw_msg.data
+        motor_msg.fro= surge_msg.data - sway_msg.data - yaw_msg.data
+        motor_msg.blo= -surge_msg.data + sway_msg.data - yaw_msg.data
+        motor_msg.bro= -surge_msg.data - sway_msg.data + yaw_msg.data
+
+        self.publisher_.publish(motor_msg)
 
 def main(args=None):
     rclpy.init(args=args)
