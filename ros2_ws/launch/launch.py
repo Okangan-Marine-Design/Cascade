@@ -136,5 +136,9 @@ def generate_launch_description():
             package='sensor_processing',
             executable='pid_combiner',
         ),
+        Node(
+            package='hardware_integration',
+            executable='serial_output',
+        ),
         ]
     )

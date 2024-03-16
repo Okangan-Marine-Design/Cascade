@@ -20,6 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
     msg/MotorThrottle.msg
     msg/Status.msg
     msg/Dvl.msg
+    srv/FindObject.srv
   DEPENDENCIES sensor_msgs geometry_msgs std_msgs)
 
 if(BUILD_TESTING)

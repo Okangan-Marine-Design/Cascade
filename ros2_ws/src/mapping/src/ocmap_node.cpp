@@ -7,11 +7,13 @@
 #include <cv_bridge/cv_bridge.hpp>
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "cascade_msgs/msg/image_with_pose.hpp"
+#include "cascade_msgs/srv/find_object.hpp"
 #include <opencv2/core/core.hpp>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/LinearMath/Vector3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 
 using namespace std;
 using namespace octomap;
@@ -23,11 +25,18 @@ using std::placeholders::_2;
 OcTree tree (0.05);
 pose6d current_pose = pose6d(0,0,0,0,0,0);
 unsigned int current_id=0;
+const float MAX_DIST=15;
 bool inserted=false;
 std::shared_ptr<rclcpp::Node> node;
 
 float depth_to_meters(float d){
     return d;
+}
+
+void find_object_callback(const std::shared_ptr<cascade_msgs::srv::FindObject::Request> request,
+                                        std::shared_ptr<cascade_msgs::srv::FindObject::Response>      response)
+{
+        
 }
 
 Pointcloud rgbd2pointcloud(const sensor_msgs::msg::Image depth)
@@ -80,9 +89,10 @@ int main(int argc, char **argv)
     node = rclcpp::Node::make_shared("octomap_server");
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), 
             "created octomap_server node!");
-        
+
     rclcpp::Subscription<cascade_msgs::msg::ImageWithPose>::SharedPtr img_subscription=
     node->create_subscription<cascade_msgs::msg::ImageWithPose>("/semantic_depth_with_pose",10, &img_subscription_callback);
+    rclcpp::Service<cascade_msgs::srv::FindObject>::SharedPtr service=node->create_service<cascade_msgs::srv::FindObject>("find_object", &find_object_callback);
 
     rclcpp::spin(node);
     rclcpp::shutdown();

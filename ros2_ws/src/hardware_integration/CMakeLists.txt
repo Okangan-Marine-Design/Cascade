@@ -19,6 +19,11 @@ add_executable(serial_intake
 
 ament_target_dependencies(serial_intake rclcpp std_msgs cascade_msgs)
 
+add_executable(serial_output
+  src/serial_output.cpp)
+
+ament_target_dependencies(serial_output rclcpp std_msgs cascade_msgs)
+
 add_executable(json_parser
   src/json_parser.cpp)
 
@@ -34,6 +39,7 @@ install(TARGETS
   serial_intake
   json_parser
   image_publisher
+  serial_output
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
