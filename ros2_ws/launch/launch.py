@@ -38,7 +38,7 @@ def generate_launch_description():
         ),
         Node(
             package='mapping',
-            executable='octomap_server',
+            executable='octomap_node',
         ),
         Node(
             package='localization',

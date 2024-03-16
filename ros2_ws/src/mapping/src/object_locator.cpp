@@ -6,6 +6,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "cascade_msgs/srv/find_object.hpp"
+#include <boost/interprocess/shared_memory_object.hpp>
 
 class ObjectLocatorNode : public rclcpp::Node
 {

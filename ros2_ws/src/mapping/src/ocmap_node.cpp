@@ -30,44 +30,31 @@ float depth_to_meters(float d){
     return d;
 }
 
-Pointcloud rgbd2pointcloud(const sensor_msgs::msg::Image depth){
-    Pointcloud result;
-    //for: all points in img
-    //  using camera specifications (FOV), create real world relative x and y coordinates for each pixel
-    //  octomap::Pointcloud::push_back (float x,float y,float z)
-    //TODO: google camera/img projection?
-    //projection matrix?
-    //void buildPointCloud(
-    cv::Mat depth_img = cv_bridge::toCvCopy(depth)->image;
-    int w = depth_img.cols;
-    int h = depth_img.rows;
-    //Camera1.fx: 617.201
-    //Camera1.fy: 617.362
-    //Camera1.cx: 324.637
-    //Camera1.cy: 242.462
-    double cx = 320;
-    double cy = 240;
-    double fx_inv = 1.0 / 554;
-    double fy_inv = 1.0 / 554;
-    float temp_x,temp_y,temp_z;
-    for (int u = 0; u < w; ++u){
-    auto rowstart = node->now();
-    for (int v = 0; v < h; ++v){
-        float z = depth_to_meters(depth_img.at<float>(v, u));   
-        if (z > 0 && z < 10){  
-            temp_x = z * ((u - cx) * fx_inv);
-            temp_y = z * ((v - cy) * fy_inv);
-            temp_z = z;  
-            result.push_back(temp_x,temp_y,temp_z);
+Pointcloud rgbd2pointcloud(const sensor_msgs::msg::Image depth)
+        {
+            //function takes in rgb-d image and returns a pointcloud object to be inserted into the octomap
+            Pointcloud result;
+            cv::Mat depth_img = cv_bridge::toCvCopy(depth)->image;
+            int w = depth_img.cols;
+            int h = depth_img.rows;
+            double cx = 320;//TODO: create node parameters for camera projection info
+            double cy = 240;//current parameters are Gazebo Garden depth cam defaults
+            double fx_inv = 1.0 / 554;
+            double fy_inv = 1.0 / 554;
+            float x,y;
+            for (int u = 0; u < w; ++u){
+                for (int v = 0; v < h; ++v){
+                    float z = depth_to_meters(depth_img.at<float>(v, u));   
+                    if (z > 0 && z < MAX_DIST){  
+                        x = z * ((u - cx) * fx_inv);//calculating the real world projection of each pixel
+                        y = z * ((v - cy) * fy_inv);
+                        result.push_back(x,y,z);//inserting point into the pointcloud
+                    }
+                }  
             }
-        }  
-        auto rowend = node->now();
-        auto rowdiff = rowend - rowstart;
-        //RCLCPP_INFO(node->get_logger(), "inserted column %.i in time(sec) : %.4f",u, rowdiff.seconds());
-    }
-    result.transform(current_pose);//changes relative pose to absolute pose
-    return result;
-}
+            result.transform(current_pose);//changes pointcloud from camera frame to map frame
+            return result;
+        }
 
 void img_subscription_callback(const cascade_msgs::msg::ImageWithPose &img_msg){
     current_pose=Pose6D(Vector3(
@@ -103,4 +90,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-//TODO: convert whole file to object later

@@ -19,15 +19,15 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(octomap REQUIRED)
 include_directories(${OCTOMAP_INCLUDE_DIRS})
 
-add_executable(octomap_server
-  src/octomap_server.cpp
+add_executable(octomap_node
+  src/ocmap_node.cpp
 )
 
-target_link_libraries(octomap_server ${OCTOMAP_LIBRARIES})
-ament_target_dependencies(octomap_server octomap rclcpp sensor_msgs geometry_msgs cv_bridge message_filters tf2 tf2_ros image_transport tf2_geometry_msgs OpenCV cascade_msgs)
+target_link_libraries(octomap_node ${OCTOMAP_LIBRARIES})
+ament_target_dependencies(octomap_node octomap rclcpp sensor_msgs geometry_msgs cv_bridge message_filters tf2 tf2_ros image_transport tf2_geometry_msgs OpenCV cascade_msgs)
 
 install(TARGETS
-  octomap_server
+  octomap_node
   DESTINATION lib/${PROJECT_NAME})
 
 
