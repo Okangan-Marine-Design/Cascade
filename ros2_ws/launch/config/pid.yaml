@@ -1,0 +1,36 @@
+yaw_pid_controller:
+  ros__parameters:
+    kI: 0.02
+    kP: 0.5
+    kD: 0.1
+    bias: 0.0
+pitch_pid_controller:
+  ros__parameters:
+    kI: 0.02
+    kP: 0.5
+    kD: 0.1
+    bias: 0.0
+roll_pid_controller:
+  ros__parameters:
+    kI: 0.02
+    kP: 0.5
+    kD: 0.1
+    bias: 0.0
+surge_pid_controller:
+  ros__parameters:
+    kI: 0.02
+    kP: 0.5
+    kD: 0.1
+    bias: 0.0
+sway_pid_controller:
+  ros__parameters:
+    kI: 0.02
+    kP: 0.5
+    kD: 0.1
+    bias: 0.0
+heave_pid_controller:
+  ros__parameters:
+    kI: 0.02
+    kP: 0.5
+    kD: 0.1
+    bias: 0.0
