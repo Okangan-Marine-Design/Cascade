@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from cascade_msgs.msg import SensorReading
 from cascade_msgs.msg import Dvl
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3Stamped
 from message_filters import ApproximateTimeSynchronizer, Subscriber
@@ -10,7 +10,7 @@ from message_filters import ApproximateTimeSynchronizer, Subscriber
 class DeadReckoningNode(Node):
     def __init__(self):
         super().__init__("Dead_Reckoning_Node")
-        self.pose_publisher_ = self.create_publisher(Pose, "/pose", 10)
+        self.pose_publisher_ = self.create_publisher(PoseStamped, "/pose", 10)
         self.pidPublisherMap={}
         self.pidPublisherMap["yaw"] = self.create_publisher(SensorReading, "/PID/yaw/actual", 10)
         self.pidPublisherMap["pitch"] = self.create_publisher(SensorReading, "/PID/pitch/actual", 10)
@@ -31,9 +31,10 @@ class DeadReckoningNode(Node):
         tss.registerCallback(self.synced_callback)
 
     def synced_callback(self, dvl, imu, depth):
-        result=Pose()
+        result=PoseStamped()
         #add dead reckoning algorithm
         #also publish 6DOF data
+        result.header.stamp=self.get_clock().now().to_msg()
         self.pose_publisher_.publish(result)
 
 def main(args=None):

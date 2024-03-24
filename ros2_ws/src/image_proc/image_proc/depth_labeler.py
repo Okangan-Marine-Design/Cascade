@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
 from cascade_msgs.msg import ImageWithPose
 from cv_bridge import CvBridge
 from message_filters import ApproximateTimeSynchronizer, Subscriber
@@ -15,7 +15,7 @@ class DepthLabelerNode(Node):
         tss = ApproximateTimeSynchronizer(
             [Subscriber(self, Image, "/clean_depth_map"),
             Subscriber(self, Image, "/labeled_image"),
-            Subscriber(self, Image, "/pose")],
+            Subscriber(self, PoseStamped, "/pose")],
             queue_size,
             acceptable_delay)
         tss.registerCallback(self.synced_callback)

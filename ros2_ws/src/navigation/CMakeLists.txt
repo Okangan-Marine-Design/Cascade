@@ -11,6 +11,8 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(tf2_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(cascade_msgs REQUIRED)
 
 add_executable(navigator
@@ -22,8 +24,7 @@ add_executable(motion_planner
 add_executable(motor_cortex
   src/motor_cortex.cpp)
 
-ament_target_dependencies(motor_cortex rclcpp std_msgs cascade_msgs)
-
+ament_target_dependencies(motor_cortex rclcpp std_msgs cascade_msgs tf2 tf2_geometry_msgs)
 ament_target_dependencies(navigator rclcpp std_msgs sensor_msgs cascade_msgs geometry_msgs)
 ament_target_dependencies(motion_planner rclcpp std_msgs sensor_msgs cascade_msgs geometry_msgs)
 

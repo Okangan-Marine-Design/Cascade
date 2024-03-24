@@ -38,16 +38,14 @@ class PIDNode(Node):
              self.kD = self.get_parameter('kD').get_parameter_value().double_value
              self.bias = self.get_parameter('bias').get_parameter_value().double_value
              self.paramsRead=True
-        msg=SensorReading()
 
-        #add PID code
+        msg=SensorReading()
 
         error=target_msg.data-actual_msg.data
 
         if(self.lastMsgTime>0):
             dt=(self.get_clock().now().nanoseconds-self.lastMsgTime)/1000000000.0
             #dt is time delta from last message in seconds 
-            print(dt)
             P=self.kP*error
             self.I+=self.kI*error*dt
             D=self.kD*(error-self.lastError)/dt

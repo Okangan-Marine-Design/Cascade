@@ -14,6 +14,7 @@ find_package(std_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
     msg/ImageWithPose.msg
+    msg/GoalPose.msg
     msg/SensorReading.msg
     msg/JsonStamped.msg
     msg/MovementCommand.msg
