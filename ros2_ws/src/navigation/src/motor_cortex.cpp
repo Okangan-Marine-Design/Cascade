@@ -113,6 +113,12 @@ class MotorCortexNode : public rclcpp::Node
             surgeMsg.data=relative_translation.y;
             heaveMsg.data=relative_translation.z;
             swayMsg.data=relative_translation.x;
+            pitchMsg.header.stamp=this->now();
+            yawMsg.header.stamp=this->now();
+            rollMsg.header.stamp=this->now();
+            surgeMsg.header.stamp=this->now();
+            swayMsg.header.stamp=this->now();
+            heaveMsg.header.stamp=this->now();
 
             pidPublisherMap["pitch"]->publish(pitchMsg);
             pidPublisherMap["yaw"]->publish(yawMsg);

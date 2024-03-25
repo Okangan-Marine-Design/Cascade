@@ -32,9 +32,17 @@ class DeadReckoningNode(Node):
 
     def synced_callback(self, dvl, imu, depth):
         result=PoseStamped()
+        nullMsg=SensorReading()
         #add dead reckoning algorithm
         #also publish 6DOF data
         result.header.stamp=self.get_clock().now().to_msg()
+        nullMsg.header.stamp=self.get_clock().now().to_msg()
+        self.pidPublisherMap["yaw"].publish(nullMsg);
+        self.pidPublisherMap["pitch"].publish(nullMsg);
+        self.pidPublisherMap["roll"].publish(nullMsg);
+        self.pidPublisherMap["surge"].publish(nullMsg);
+        self.pidPublisherMap["sway"].publish(nullMsg);
+        self.pidPublisherMap["heave"].publish(nullMsg);
         self.pose_publisher_.publish(result)
 
 def main(args=None):

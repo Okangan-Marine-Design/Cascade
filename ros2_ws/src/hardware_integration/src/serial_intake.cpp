@@ -17,7 +17,7 @@ class SerialIntakeNode : public rclcpp::Node
         { 
             publisher_ = this->create_publisher<cascade_msgs::msg::JsonStamped>("/hardware/rawJson", 10);
             timer_ = this->create_wall_timer(
-                500ms, std::bind(&SerialIntakeNode::timer_callback, this));
+                50ms, std::bind(&SerialIntakeNode::timer_callback, this));
         }
     private:
         std::string fetchJsonStringFromFile(const std::string& filename) 
