@@ -61,16 +61,96 @@
     <include>
       <pose>0 0 1 0 0 1.57</pose>
 	
-      <uri> /home/eryk/Desktop/Cascade/simulation/models/model.sdf </uri>
+      <uri> /home/eryk/Desktop/Cascade/simulation/models/cascade.sdf </uri>
 
       <plugin
         filename="ignition-gazebo-thruster-system"
         name="ignition::gazebo::systems::Thruster">
         <namespace>cascade</namespace>
-        <joint_name>propeller_joint</joint_name>
+        <joint_name>propeller_bro_joint</joint_name>
+        <topic>motor_throttle/bro</topic>
+        <velocity_control>true</velocity_control>
         <thrust_coefficient>0.004422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
-        <propeller_diameter>0.2</propeller_diameter>
+        <propeller_diameter>0.05</propeller_diameter>
+      </plugin>
+    <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>cascade</namespace>
+        <joint_name>propeller_blo_joint</joint_name>
+        <topic>motor_throttle/blo</topic>
+        <velocity_control>true</velocity_control>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.05</propeller_diameter>
+      </plugin>
+    <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>cascade</namespace>
+        <joint_name>propeller_fro_joint</joint_name>
+        <topic>motor_throttle/fro</topic>
+        <velocity_control>true</velocity_control>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.05</propeller_diameter>
+      </plugin>
+    <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>cascade</namespace>
+        <joint_name>propeller_flo_joint</joint_name>
+        <topic>motor_throttle/flo</topic>
+        <velocity_control>true</velocity_control>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.05</propeller_diameter>
+      </plugin>
+
+    <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>cascade</namespace>
+        <joint_name>propeller_bri_joint</joint_name>
+        <topic>motor_throttle/bri</topic>
+        <velocity_control>true</velocity_control>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.05</propeller_diameter>
+      </plugin>
+    <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>cascade</namespace>
+        <joint_name>propeller_bli_joint</joint_name>
+        <topic>motor_throttle/bli</topic>
+        <velocity_control>true</velocity_control>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.05</propeller_diameter>
+      </plugin>
+    <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>cascade</namespace>
+        <joint_name>propeller_fri_joint</joint_name>
+        <topic>motor_throttle/fri</topic>
+        <velocity_control>true</velocity_control>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.05</propeller_diameter>
+      </plugin>
+    <plugin
+        filename="ignition-gazebo-thruster-system"
+        name="ignition::gazebo::systems::Thruster">
+        <namespace>cascade</namespace>
+        <joint_name>propeller_fli_joint</joint_name>
+        <topic>motor_throttle/fli</topic>
+        <velocity_control>true</velocity_control>
+        <thrust_coefficient>0.004422</thrust_coefficient>
+        <fluid_density>1000</fluid_density>
+        <propeller_diameter>0.05</propeller_diameter>
       </plugin>
 
       <plugin
