@@ -61,13 +61,12 @@
     <include>
       <pose>0 0 1 0 0 1.57</pose>
 	
-	<uri> ../models/cylinder.urdf </uri>
+      <uri> /home/eryk/Desktop/Cascade/simulation/models/model.sdf </uri>
 
-      <!-- thruster controller -->
       <plugin
         filename="ignition-gazebo-thruster-system"
         name="ignition::gazebo::systems::Thruster">
-        <namespace>tethys</namespace>
+        <namespace>cascade</namespace>
         <joint_name>propeller_joint</joint_name>
         <thrust_coefficient>0.004422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
