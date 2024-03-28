@@ -1,11 +1,11 @@
-float32 fli
-float32 fri
-float32 bli
-float32 bri
-float32 flo
-float32 fro
-float32 blo
-float32 bro
+float64 fli
+float64 fri
+float64 bli
+float64 bri
+float64 flo
+float64 fro
+float64 blo
+float64 bro
 # names are a little confusing, 
 # fli = front left inner motor
 # bro = back right outer motor

@@ -1,7 +1,14 @@
 <?xml version="1.0"?>
 <sdf version="1.6">
-  <model name="tethys">
-    <!-- Body -->
+  <model name="cascade">
+<plugin
+        filename="ignition-gazebo-pose-publisher-system"
+        name="gz::sim::systems::PosePublisher">
+        <publish_link_pose>true</publish_link_pose>
+        <publish_collision_pose>false</publish_collision_pose>
+        <publish_visual_pose>false</publish_visual_pose>
+        <publish_nested_model_pose>false</publish_nested_model_pose>
+      </plugin>    <!-- Body -->
     <link name="base_link">
       <inertial>
         <mass>147.8671</mass>

@@ -150,6 +150,10 @@ def generate_launch_description():
             executable='pid_combiner',
         ),
         Node(
+            package='sensor_processing',
+            executable='sim_adapter',
+        ),
+        Node(
             package='hardware_integration',
             executable='serial_output',
         ),
