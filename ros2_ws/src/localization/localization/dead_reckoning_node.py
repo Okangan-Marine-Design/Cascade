@@ -9,6 +9,8 @@ from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3Stamped
 from message_filters import ApproximateTimeSynchronizer, Subscriber
 import math
+import tf2_ros
+import numpy as np
 
 class DeadReckoningNode(Node):
     def __init__(self):
@@ -38,6 +40,7 @@ class DeadReckoningNode(Node):
                 "/model/cascade/pose",
                 self.sim_pose_callback,
                 10)
+        self.previous_pose=PoseStamped()
 
     def euler_from_quaternion(self, x, y, z, w):
         """
@@ -60,26 +63,90 @@ class DeadReckoningNode(Node):
         yaw_z = math.atan2(t3, t4)
      
         return roll_x*(180./math.pi), pitch_y*(180./math.pi), yaw_z*(180./math.pi) 
+    
+    def quaternion_to_rotation_matrix(self, quaternion):
+        x, y, z, w = quaternion
+        return np.array([
+            [1 - 2*(y**2 + z**2), 2*(x*y - z*w), 2*(x*z + y*w)],
+            [2*(x*y + z*w), 1 - 2*(x**2 + z**2), 2*(y*z - x*w)],
+            [2*(x*z - y*w), 2*(y*z + x*w), 1 - 2*(x**2 + y**2)]
+        ])
+
+    def surge_sway_heave_from_pose(self, msg):
+        surge=sway=heave=0
+
+        if self.previous_pose is not None:
+            try:
+                # Calculate pose differences (displacements) between consecutive poses
+                current_time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+                previous_time = self.previous_pose.header.stamp.sec + self.previous_pose.header.stamp.nanosec * 1e-9
+
+                # Compute the time difference between the current and previous messages
+                dt = current_time - previous_time
+                dx = msg.pose.position.x - self.previous_pose.pose.position.x
+                dy = msg.pose.position.y - self.previous_pose.pose.position.y
+                dz = msg.pose.position.z - self.previous_pose.pose.position.z
+
+                # Extract orientation (quaternion) from current pose
+                orientation = [
+                    msg.pose.orientation.x,
+                    msg.pose.orientation.y,
+                    msg.pose.orientation.z,
+                    msg.pose.orientation.w
+                ]
+
+            # Convert quaternion to rotation matrix
+                R_world_to_robot = self.quaternion_to_rotation_matrix(orientation)
+
+                # Transform pose differences into robot's local coordinate frame
+                displacement_world_frame = np.array([dx, dy, dz])
+                displacement_robot_frame = np.dot(R_world_to_robot.T, displacement_world_frame)
+
+            # Extract surge, sway, and heave components in robot's frame of reference
+                surge = displacement_robot_frame[0]/dt
+                sway = displacement_robot_frame[1]/dt
+                heave = displacement_robot_frame[2]/dt
+
+            # Do something with surge, sway, and heave...
+
+            except Exception as e:
+                pass
+
+        # Update previous pose for next iteration
+        self.previous_pose = msg
+        return [0.0,0.0,0.0]
+        return [surge,sway,heave]
 
     def sim_pose_callback(self, pose_msg):
         self.sim_mode=True
         result=PoseStamped()
         result.pose=pose_msg
         q=pose_msg.orientation
+        result.header.stamp=self.get_clock().now().to_msg()
+
         eulers=self.euler_from_quaternion(q.x,q.y,q.z,q.w)
+        ssh=self.surge_sway_heave_from_pose(result)
 
         msg=SensorReading()
-        result.header.stamp=self.get_clock().now().to_msg()
         msg.header.stamp=self.get_clock().now().to_msg()
 
         msg.data=eulers[2]
-        self.pidPublisherMap["yaw"].publish(msg);
+        self.pidPublisherMap["yaw"].publish(msg)
 
         msg.data=eulers[1]
-        self.pidPublisherMap["pitch"].publish(msg);
+        self.pidPublisherMap["pitch"].publish(msg)
 
         msg.data=eulers[0]
-        self.pidPublisherMap["roll"].publish(msg);
+        self.pidPublisherMap["roll"].publish(msg)
+
+        msg.data=ssh[0]
+        self.pidPublisherMap["surge"].publish(msg)
+
+        msg.data=ssh[1]
+        self.pidPublisherMap["sway"].publish(msg)
+        
+        msg.data=ssh[2]
+        self.pidPublisherMap["heave"].publish(msg)
 
         self.pose_publisher_.publish(result)
 

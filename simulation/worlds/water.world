@@ -59,20 +59,28 @@
     </light>
 
     <include>
-      <pose>0 0 1 0 0 1.57</pose>
-	
+      <pose>0 0 0 0 0 0</pose>
+	<plugin
+        filename="ignition-gazebo-pose-publisher-system"
+        name="gz::sim::systems::PosePublisher">
+        <publish_link_pose>false</publish_link_pose>
+        <publish_collision_pose>false</publish_collision_pose>
+        <publish_visual_pose>false</publish_visual_pose>
+        <publish_model_pose>true</publish_model_pose>
+        <publish_nested_model_pose>true</publish_nested_model_pose>
+      </plugin>
       <uri> /home/eryk/Desktop/Cascade/simulation/models/cascade.sdf </uri>
-
+    
       <plugin
         filename="ignition-gazebo-thruster-system"
         name="ignition::gazebo::systems::Thruster">
         <namespace>cascade</namespace>
         <joint_name>propeller_bro_joint</joint_name>
         <topic>motor_throttle/bro</topic>
-        <velocity_control>true</velocity_control>
-        <thrust_coefficient>0.004422</thrust_coefficient>
+        <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
+        <velocity_control>false</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -80,10 +88,10 @@
         <namespace>cascade</namespace>
         <joint_name>propeller_blo_joint</joint_name>
         <topic>motor_throttle/blo</topic>
-        <velocity_control>true</velocity_control>
-        <thrust_coefficient>0.004422</thrust_coefficient>
+        <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
+        <velocity_control>false</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -91,10 +99,10 @@
         <namespace>cascade</namespace>
         <joint_name>propeller_fro_joint</joint_name>
         <topic>motor_throttle/fro</topic>
-        <velocity_control>true</velocity_control>
-        <thrust_coefficient>0.004422</thrust_coefficient>
+        <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
+        <velocity_control>false</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -102,10 +110,10 @@
         <namespace>cascade</namespace>
         <joint_name>propeller_flo_joint</joint_name>
         <topic>motor_throttle/flo</topic>
-        <velocity_control>true</velocity_control>
-        <thrust_coefficient>0.004422</thrust_coefficient>
+        <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
+        <velocity_control>false</velocity_control>
       </plugin>
 
     <plugin
@@ -114,10 +122,10 @@
         <namespace>cascade</namespace>
         <joint_name>propeller_bri_joint</joint_name>
         <topic>motor_throttle/bri</topic>
-        <velocity_control>true</velocity_control>
-        <thrust_coefficient>0.004422</thrust_coefficient>
+        <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
+        <velocity_control>false</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -125,10 +133,10 @@
         <namespace>cascade</namespace>
         <joint_name>propeller_bli_joint</joint_name>
         <topic>motor_throttle/bli</topic>
-        <velocity_control>true</velocity_control>
-        <thrust_coefficient>0.004422</thrust_coefficient>
+        <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
+        <velocity_control>false</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -136,10 +144,10 @@
         <namespace>cascade</namespace>
         <joint_name>propeller_fri_joint</joint_name>
         <topic>motor_throttle/fri</topic>
-        <velocity_control>true</velocity_control>
-        <thrust_coefficient>0.004422</thrust_coefficient>
+        <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
+        <velocity_control>false</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -147,10 +155,10 @@
         <namespace>cascade</namespace>
         <joint_name>propeller_fli_joint</joint_name>
         <topic>motor_throttle/fli</topic>
-        <velocity_control>true</velocity_control>
-        <thrust_coefficient>0.004422</thrust_coefficient>
+        <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
+        <velocity_control>false</velocity_control>
       </plugin>
 
       <plugin
