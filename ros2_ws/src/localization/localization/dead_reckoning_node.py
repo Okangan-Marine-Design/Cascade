@@ -78,8 +78,8 @@ class DeadReckoningNode(Node):
         if self.previous_pose is not None:
             try:
                 # Calculate pose differences (displacements) between consecutive poses
-                current_time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
-                previous_time = self.previous_pose.header.stamp.sec + self.previous_pose.header.stamp.nanosec * 1e-9
+                current_time = float(msg.header.stamp.sec) + float(msg.header.stamp.nanosec) * 1e-9
+                previous_time = float(self.previous_pose.header.stamp.sec) + float(self.previous_pose.header.stamp.nanosec) * 1e-9
 
                 # Compute the time difference between the current and previous messages
                 dt = current_time - previous_time
@@ -107,14 +107,12 @@ class DeadReckoningNode(Node):
                 sway = displacement_robot_frame[1]/dt
                 heave = displacement_robot_frame[2]/dt
 
-            # Do something with surge, sway, and heave...
-
             except Exception as e:
                 pass
 
         # Update previous pose for next iteration
         self.previous_pose = msg
-        return [0.0,0.0,0.0]
+        #return [0.0,0.0,0.0]
         return [surge,sway,heave]
 
     def sim_pose_callback(self, pose_msg):

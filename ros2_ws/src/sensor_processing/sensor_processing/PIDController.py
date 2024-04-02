@@ -42,8 +42,8 @@ class PIDNode(Node):
         msg=SensorReading()
 
         error=target_msg.data-actual_msg.data
-        if(abs(error)>330):
-            error=0
+        if(abs(error)>180):
+            error=0.0
 
         if(self.lastMsgTime>0):
             dt=(self.get_clock().now().nanoseconds-self.lastMsgTime)/1000000000.0

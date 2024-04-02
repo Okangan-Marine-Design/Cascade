@@ -26,28 +26,28 @@ class SimAdapterNode(Node):
     def motor_callback(self, motor_msg):
         msg=Float64()
 
-        msg.data=motor_msg.fli;
+        msg.data=max(-100.0,min(100.0,motor_msg.fli));
         self.fli.publish(msg);
         
-        msg.data=motor_msg.flo;
+        msg.data=max(-100.0,min(100.0,motor_msg.flo));
         self.flo.publish(msg);
         
-        msg.data=motor_msg.fro;
+        msg.data=max(-100.0,min(100.0,motor_msg.fro));
         self.fro.publish(msg);
         
-        msg.data=motor_msg.fri;
+        msg.data=max(-100.0,min(100.0,motor_msg.fri));
         self.fri.publish(msg);
 
-        msg.data=motor_msg.bli;
+        msg.data=max(-100.0,min(100.0,motor_msg.bli));
         self.bli.publish(msg);
         
-        msg.data=motor_msg.blo;
+        msg.data=max(-100.0,min(100.0,motor_msg.blo));
         self.blo.publish(msg);
         
-        msg.data=motor_msg.bro;
+        msg.data=max(-100.0,min(100.0,motor_msg.bro));
         self.bro.publish(msg);
         
-        msg.data=motor_msg.bri;
+        msg.data=max(-100.0,min(100.0,motor_msg.bri));
         self.bri.publish(msg);
 
 def main(args=None):

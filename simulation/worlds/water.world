@@ -80,7 +80,7 @@
         <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
-        <velocity_control>false</velocity_control>
+        <velocity_control>true</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -91,7 +91,7 @@
         <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
-        <velocity_control>false</velocity_control>
+        <velocity_control>true</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -102,7 +102,7 @@
         <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
-        <velocity_control>false</velocity_control>
+        <velocity_control>true</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -113,7 +113,7 @@
         <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
-        <velocity_control>false</velocity_control>
+        <velocity_control>true</velocity_control>
       </plugin>
 
     <plugin
@@ -125,7 +125,7 @@
         <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
-        <velocity_control>false</velocity_control>
+        <velocity_control>true</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -136,7 +136,7 @@
         <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
-        <velocity_control>false</velocity_control>
+        <velocity_control>true</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -147,7 +147,7 @@
         <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
-        <velocity_control>false</velocity_control>
+        <velocity_control>true</velocity_control>
       </plugin>
     <plugin
         filename="ignition-gazebo-thruster-system"
@@ -158,7 +158,7 @@
         <thrust_coefficient>0.04422</thrust_coefficient>
         <fluid_density>1000</fluid_density>
         <propeller_diameter>0.05</propeller_diameter>
-        <velocity_control>false</velocity_control>
+        <velocity_control>true</velocity_control>
       </plugin>
 
       <plugin

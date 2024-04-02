@@ -99,20 +99,17 @@ class MotorCortexNode : public rclcpp::Node
             
             float pitchDiff=atan2(currentGoalPoseMsg.pose.position.z-currentPoseMsg.pose.position.z,
                         currentGoalPoseMsg.pose.position.y-currentPoseMsg.pose.position.y)*(180/3.1415926);
-
-            if(!currentGoalPoseMsg.straight_line){
-                pitchDiff=0;
-                yawDiff=0;
-            }
+            pitchDiff=0;
+            yawDiff=0;//dont try to orient to the goal pose, just do translational movements
 
             geometry_msgs::msg::Vector3 relative_translation = calculateRelativeTranslation(currentPoseMsg.pose,currentGoalPoseMsg.pose);
 
             pitchMsg.data=pitchDiff;
             yawMsg.data=yawDiff;
             rollMsg.data=0;
-            surgeMsg.data=relative_translation.y;
+            surgeMsg.data=relative_translation.x;
             heaveMsg.data=relative_translation.z;
-            swayMsg.data=relative_translation.x;
+            swayMsg.data=relative_translation.y;
             pitchMsg.header.stamp=this->now();
             yawMsg.header.stamp=this->now();
             rollMsg.header.stamp=this->now();
