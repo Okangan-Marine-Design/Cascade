@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <cmath>
 
 #include "rclcpp/rclcpp.hpp"
 #include "cascade_msgs/msg/movement_command.hpp"
@@ -49,14 +50,34 @@ class MotorCortexNode : public rclcpp::Node
         void current_pose_callback(geometry_msgs::msg::PoseStamped msg){
             currentPoseMsg=msg;
         }
-        float calculateTimeFromSpeed(){
+        float calculateSpeedFromDistance(float dist){
             //implement
             //how fast do we want to be going based on distance from goal
-            //if 5m x and 1m y and max speed is 2.5m/s
-            //2s (because x is the larger value, 5/2.5)
-            //then y speed will be 1/2 = 0.5m/s
-            return 1;
+            //if more than 1.5 meters, 1.5m/s
+            //if between 0.1 and 1.5 meters, want to move at same speed as distance, ex. 1 meter away = 1m/s goal speed
+            //if less than 0.1 dont need to move, we consider this as at the goal
+            if(abs(dist)>3){
+                holdMode=false; // TODO this is kind of jank, find a better place to turn off yaw holdMode
+                return 1.5*dist/abs(dist);//this makes sure that the speed returned is in the correct direction
+            }
+            if(abs(dist)>=0.1 && abs(dist)<=3)return dist/2;
+            //TODO: turn these values into adjustable parameters
+            return 0;//returns zero if very close to goal (dist<0.1)
         }
+        float yaw_from_pose(const geometry_msgs::msg::Pose& pose) {
+            float x = pose.orientation.x;
+            float y = pose.orientation.y;
+            float z = pose.orientation.z;
+            float w = pose.orientation.w;
+
+            // Compute yaw angle
+            float t3 = +2.0 * (w * z + x * y);
+            float t4 = +1.0 - 2.0 * (y * y + z * z);
+            float yaw_z = std::atan2(t3, t4);
+
+            return yaw_z * (180.0f / M_PI);
+        }
+
         geometry_msgs::msg::Vector3 calculateRelativeTranslation(const geometry_msgs::msg::Pose& current_pose,
                                                          const geometry_msgs::msg::Pose& goal_pose)
         {
@@ -94,22 +115,25 @@ class MotorCortexNode : public rclcpp::Node
                 swayMsg=cascade_msgs::msg::SensorReading();
 
             //calculating required rotation 
-            float yawDiff=atan2(currentGoalPoseMsg.pose.position.x-currentPoseMsg.pose.position.x,
-                        currentGoalPoseMsg.pose.position.y-currentPoseMsg.pose.position.y)*(180/3.1415926);
+            float yawDiff=atan2(currentGoalPoseMsg.pose.position.y-currentPoseMsg.pose.position.y,
+                        currentGoalPoseMsg.pose.position.x-currentPoseMsg.pose.position.x)*(180/3.1415926);
             
-            float pitchDiff=atan2(currentGoalPoseMsg.pose.position.z-currentPoseMsg.pose.position.z,
-                        currentGoalPoseMsg.pose.position.y-currentPoseMsg.pose.position.y)*(180/3.1415926);
-            pitchDiff=0;
-            yawDiff=0;//dont try to orient to the goal pose, just do translational movements
-
             geometry_msgs::msg::Vector3 relative_translation = calculateRelativeTranslation(currentPoseMsg.pose,currentGoalPoseMsg.pose);
-
-            pitchMsg.data=pitchDiff;
+            float trig_dist = sqrt(relative_translation.x*relative_translation.x + relative_translation.y*relative_translation.y);
+            if(trig_dist<3){//TODO make this a parameter
+                //if  very close to goal, dont try to rotate
+                if(!holdMode){
+                    holdYaw=yaw_from_pose(currentPoseMsg.pose);
+                    holdMode=true;
+                }
+                yawDiff=holdYaw;
+            }
+            pitchMsg.data=0;
             yawMsg.data=yawDiff;
             rollMsg.data=0;
-            surgeMsg.data=relative_translation.x;
-            heaveMsg.data=relative_translation.z;
-            swayMsg.data=relative_translation.y;
+            surgeMsg.data=calculateSpeedFromDistance(relative_translation.x);
+            heaveMsg.data=calculateSpeedFromDistance(relative_translation.z);
+            swayMsg.data=calculateSpeedFromDistance(relative_translation.y);
             pitchMsg.header.stamp=this->now();
             yawMsg.header.stamp=this->now();
             rollMsg.header.stamp=this->now();
@@ -142,6 +166,8 @@ class MotorCortexNode : public rclcpp::Node
         rclcpp::Publisher<cascade_msgs::msg::Status>::SharedPtr status_publisher_;
         rclcpp::TimerBase::SharedPtr timer_;
         std::map<std::string, rclcpp::Publisher<cascade_msgs::msg::SensorReading>::SharedPtr> pidPublisherMap;
+        float holdYaw=0;
+        bool holdMode=false;
 };
 
 

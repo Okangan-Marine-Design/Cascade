@@ -15,6 +15,7 @@ class PIDNode(Node):
         self.kP=1.0
         self.bias=0.0
         self.paramsRead=False
+        self.saturation_limit=100
         self.I=0.0
         
         self.lastMsgTime=-1
@@ -42,7 +43,7 @@ class PIDNode(Node):
         msg=SensorReading()
 
         error=target_msg.data-actual_msg.data
-        if(abs(error)>180):
+        if(abs(error)>340):
             error=0.0
 
         if(self.lastMsgTime>0):
@@ -50,6 +51,8 @@ class PIDNode(Node):
             #dt is time delta from last message in seconds 
             P=self.kP*error
             self.I+=self.kI*error*dt
+            self.I = max(min(self.I, self.saturation_limit), -self.saturation_limit)
+            #TODO: turn this into a ros2 parameter
             D=self.kD*(error-self.lastError)/dt
             msg.data=P+self.I+D
         else:

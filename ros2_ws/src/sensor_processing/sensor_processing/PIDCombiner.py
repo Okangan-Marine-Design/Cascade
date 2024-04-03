@@ -25,10 +25,10 @@ class PIDCombinerNode(Node):
     def synced_callback(self, yaw_msg, pitch_msg, roll_msg, surge_msg, sway_msg, heave_msg):
         motor_msg=MotorThrottle()
         #adding up corresponding pid values for each motor
-        motor_msg.fli= heave_msg.data - roll_msg.data - pitch_msg.data
-        motor_msg.fri= heave_msg.data + roll_msg.data - pitch_msg.data
-        motor_msg.bli= heave_msg.data - roll_msg.data + pitch_msg.data
-        motor_msg.bri= heave_msg.data + roll_msg.data + pitch_msg.data
+        motor_msg.fli= heave_msg.data + roll_msg.data - pitch_msg.data
+        motor_msg.fri= heave_msg.data - roll_msg.data - pitch_msg.data
+        motor_msg.bli= heave_msg.data + roll_msg.data + pitch_msg.data
+        motor_msg.bri= heave_msg.data - roll_msg.data + pitch_msg.data
 
         motor_msg.flo= surge_msg.data - sway_msg.data - yaw_msg.data
         motor_msg.fro= surge_msg.data + sway_msg.data + yaw_msg.data
