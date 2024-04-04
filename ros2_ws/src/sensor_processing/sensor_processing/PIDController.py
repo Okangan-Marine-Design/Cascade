@@ -17,6 +17,8 @@ class PIDNode(Node):
         self.paramsRead=False
         self.saturation_limit=100
         self.I=0.0
+        self.wrap=0
+        self.prevMsg=SensorReading()
         
         self.lastMsgTime=-1
         self.lastError=0.0
@@ -42,9 +44,13 @@ class PIDNode(Node):
 
         msg=SensorReading()
 
-        error=target_msg.data-actual_msg.data
-        if(abs(error)>340):
-            error=0.0
+        # Detect angle wrap-around, should never happen for surge sway heave controllers because the ranges of those are much lower
+        if (actual_msg.data - self.prevMsg.data < -300.0):
+            self.wrap+=1
+        elif (actual_msg.data - self.prevMsg.data > 300.0):
+            self.wrap-=1
+        
+        error=target_msg.data-(actual_msg.data+self.wrap*360.0)
 
         if(self.lastMsgTime>0):
             dt=(self.get_clock().now().nanoseconds-self.lastMsgTime)/1000000000.0
@@ -52,13 +58,14 @@ class PIDNode(Node):
             P=self.kP*error
             self.I+=self.kI*error*dt
             self.I = max(min(self.I, self.saturation_limit), -self.saturation_limit)
-            #TODO: turn this into a ros2 parameter
+            #TODO: turn saturation into a ros2 parameter
             D=self.kD*(error-self.lastError)/dt
             msg.data=P+self.I+D
         else:
             msg.data=0.0
 
         self.lastError=error
+        self.prevMsg=actual_msg
         self.lastMsgTime=self.get_clock().now().nanoseconds
         msg.header.stamp=self.get_clock().now().to_msg()
         self.publisher_.publish(msg)

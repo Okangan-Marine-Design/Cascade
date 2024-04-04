@@ -9,6 +9,9 @@
 #include "cascade_msgs/srv/find_object.hpp"
 #include "cascade_msgs/msg/status.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;
@@ -60,6 +63,17 @@ class NavigatorNode : public rclcpp::Node
                 RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service find_object");
             }
             return 0;
+        }
+        geometry_msgs::msg::Quaternion quaternion_from_rpy(float roll, float pitch, float yaw) {
+            // Convert roll, pitch, yaw angles to quaternion
+            tf2::Quaternion quat;
+            quat.setRPY(roll, pitch, yaw);
+
+            // Convert tf2 Quaternion to ROS 2 Quaternion message
+            geometry_msgs::msg::Quaternion quat_msg;
+            tf2::convert(quat, quat_msg);
+
+            return quat_msg;
         }
 
         rclcpp::Subscription<cascade_msgs::msg::MovementCommand>::SharedPtr command_subscription_;

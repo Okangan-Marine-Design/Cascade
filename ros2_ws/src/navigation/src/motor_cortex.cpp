@@ -45,6 +45,7 @@ class MotorCortexNode : public rclcpp::Node
     private:
         void goal_pose_callback(cascade_msgs::msg::GoalPose msg){
             currentGoalPoseMsg=msg;
+            holdMode=false;
         }
 
         void current_pose_callback(geometry_msgs::msg::PoseStamped msg){
@@ -58,11 +59,11 @@ class MotorCortexNode : public rclcpp::Node
             //if less than 0.1 dont need to move, we consider this as at the goal
             if(abs(dist)>3){
                 holdMode=false; // TODO this is kind of jank, find a better place to turn off yaw holdMode
-                return 1.5*dist/abs(dist);//this makes sure that the speed returned is in the correct direction
+                return 0.75*dist/abs(dist);//this makes sure that the speed returned is in the correct direction
             }
-            if(abs(dist)>=0.1 && abs(dist)<=3)return dist/2;
+            if(abs(dist)>=0.1 && abs(dist)<=3)return fmin(dist/4,0.3);
             //TODO: turn these values into adjustable parameters
-            return 0;//returns zero if very close to goal (dist<0.1)
+            return dist/8;//returns very low speed if very close to goal (dist<0.1)
         }
         float yaw_from_pose(const geometry_msgs::msg::Pose& pose) {
             float x = pose.orientation.x;
@@ -76,6 +77,28 @@ class MotorCortexNode : public rclcpp::Node
             float yaw_z = std::atan2(t3, t4);
 
             return yaw_z * (180.0f / M_PI);
+        }
+        
+        std::tuple<float, float, float> euler_from_quaternion(float x, float y, float z, float w) {
+            // Convert a quaternion into euler angles (roll, pitch, yaw)
+            // roll is rotation around x in radians (counterclockwise)
+            // pitch is rotation around y in radians (counterclockwise)
+            // yaw is rotation around z in radians (counterclockwise)
+
+            float t0 = +2.0 * (w * x + y * z);
+            float t1 = +1.0 - 2.0 * (x * x + y * y);
+            float roll_x = std::atan2(t0, t1);
+
+            float t2 = +2.0 * (w * y - z * x);
+            t2 = +1.0f > t2 ? +1.0f : t2;
+            t2 = -1.0f < t2 ? -1.0f : t2;
+            float pitch_y = std::asin(t2);
+
+            float t3 = +2.0 * (w * z + x * y);
+            float t4 = +1.0 - 2.0 * (y * y + z * z);
+            float yaw_z = std::atan2(t3, t4);
+
+            return std::make_tuple(roll_x * (180.0f / M_PI), pitch_y * (180.0f / M_PI), yaw_z * (180.0f / M_PI));
         }
 
         geometry_msgs::msg::Vector3 calculateRelativeTranslation(const geometry_msgs::msg::Pose& current_pose,
@@ -115,8 +138,9 @@ class MotorCortexNode : public rclcpp::Node
                 swayMsg=cascade_msgs::msg::SensorReading();
 
             //calculating required rotation 
-            float yawDiff=atan2(currentGoalPoseMsg.pose.position.y-currentPoseMsg.pose.position.y,
-                        currentGoalPoseMsg.pose.position.x-currentPoseMsg.pose.position.x)*(180/3.1415926);
+            float yaw=0,
+                  pitch=0,
+                  roll=0;
             
             geometry_msgs::msg::Vector3 relative_translation = calculateRelativeTranslation(currentPoseMsg.pose,currentGoalPoseMsg.pose);
             float trig_dist = sqrt(relative_translation.x*relative_translation.x + relative_translation.y*relative_translation.y);
@@ -126,11 +150,17 @@ class MotorCortexNode : public rclcpp::Node
                     holdYaw=yaw_from_pose(currentPoseMsg.pose);
                     holdMode=true;
                 }
-                yawDiff=holdYaw;
+                if(currentGoalPoseMsg.copy_orientation){
+                    holdYaw=yaw_from_pose(currentGoalPoseMsg.pose);
+                }
+                yaw=holdYaw;
             }
-            pitchMsg.data=0;
-            yawMsg.data=yawDiff;
-            rollMsg.data=0;
+            else
+                yaw=atan2(currentGoalPoseMsg.pose.position.y-currentPoseMsg.pose.position.y,
+                        currentGoalPoseMsg.pose.position.x-currentPoseMsg.pose.position.x)*(180/3.1415926);
+            pitchMsg.data=pitch;
+            yawMsg.data=yaw;
+            rollMsg.data=roll;
             surgeMsg.data=calculateSpeedFromDistance(relative_translation.x);
             heaveMsg.data=calculateSpeedFromDistance(relative_translation.z);
             swayMsg.data=calculateSpeedFromDistance(relative_translation.y);
@@ -147,7 +177,6 @@ class MotorCortexNode : public rclcpp::Node
             pidPublisherMap["surge"]->publish(surgeMsg);
             pidPublisherMap["sway"]->publish(swayMsg);
             pidPublisherMap["heave"]->publish(heaveMsg);
-
 
             //how will roll pid be handled? always 0? probably for now yes
             //now figure out how to tranform the pose
