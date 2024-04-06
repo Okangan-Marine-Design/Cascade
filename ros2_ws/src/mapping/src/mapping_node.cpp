@@ -82,6 +82,7 @@ void rgbd2pointcloud(const cascade_msgs::msg::ImageWithPose img) {
 
 void img_subscription_callback(const cascade_msgs::msg::ImageWithPose &img_msg){
     //possibly add a queue for inserting the depth maps?
+    rgbd2pointcloud(img_msg);
 }
 
 int main(int argc, char **argv)

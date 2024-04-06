@@ -28,7 +28,7 @@ private:
         auto message = sensor_msgs::msg::Image();
         // Assuming you have a method to fetch image data from the file
         fetchImageDataFromFile(filename, message);
-        publisher_->publish(message);
+        //publisher_->publish(message);
     }
 
     // Method to fetch image data from a file and populate the Image message

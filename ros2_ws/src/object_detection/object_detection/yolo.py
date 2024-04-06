@@ -5,7 +5,6 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Int16MultiArray
 from cv_bridge import CvBridge
 import cv2
-from message_filters import ApproximateTimeSynchronizer, Subscriber
 
 class YoloNode(image_node.ImageNode):
     def __init__(self):
@@ -17,14 +16,8 @@ class YoloNode(image_node.ImageNode):
         return boudningBoxes
 
     #overriding default callback
-    def listener_callback(self, msg):
-        try:
-            img = self.bridge.imgmsg_to_cv2(msg, "rgb8")
-            boundingBoxes=inference(img)
-            publish(img)
-
-        except:
-            self.get_logger().debug('Failed to convert image msg')
+    def subscription_callback(self, msg):
+        self.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)

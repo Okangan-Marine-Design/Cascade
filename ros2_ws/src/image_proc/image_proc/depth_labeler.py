@@ -24,9 +24,9 @@ class DepthLabelerNode(Node):
     def synced_callback(self, depth_msg, label_msg, pose_msg):
         msg=ImageWithPose()
         msg.image=depth_msg #placeholder, will need to actually find overlap between label and depth in future
-        msg.pose=pose_msg
+        msg.pose=pose_msg.pose
+        msg.header.stamp=self.get_clock().now().to_msg()
         self.publisher_.publish(msg)
-        pass
 
 def main(args=None):
     rclpy.init(args=args)

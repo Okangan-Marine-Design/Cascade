@@ -8,6 +8,9 @@ import cv2
 class BackgroundRemoverNode(image_node.ImageNode):
     def __init__(self):
         super().__init__ (sub_topic="/sensors/camera/depth_map",pub_topic="/clean_depth_map", name="background_remover")
+    
+    def subscription_callback(self, msg):
+        self.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)

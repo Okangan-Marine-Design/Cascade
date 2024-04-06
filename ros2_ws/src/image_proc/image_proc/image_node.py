@@ -31,6 +31,7 @@ class ImageNode(Node):
 
     def publish(self, img):
         try:
+            img.header.stamp=self.get_clock().now().to_msg()
             self.publisher_.publish(img)
         except:
             self.get_logger().debug('Failed to send image msg @ '+self.name)
