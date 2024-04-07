@@ -11,6 +11,8 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include "bonxai/bonxai.hpp"
+#include "bonxai/serialization.hpp"
+#include <sstream>
 
 using namespace std;
 using namespace cv_bridge;
@@ -101,5 +103,13 @@ int main(int argc, char **argv)
     rclcpp::spin(node);
     rclcpp::shutdown();
 
+    std::ofstream outputFile("map.bx", std::ios::binary);
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Unable to open file for writing" << std::endl;
+        return 1;
+    }
+
+    Bonxai::Serialize(outputFile, grid);
+    outputFile.close();
     return 0;
 }

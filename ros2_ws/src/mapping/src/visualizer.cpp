@@ -1,15 +1,13 @@
-#include <gl3w/GL/gl3w.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
+#include "bonxai/bonxai.hpp"
+#include "bonxai/serialization.hpp"
+#include <sstream>
+#include <vector>
 
-#define GLT_IMPLEMENTATION
-#include "gltext.h"
-
-// Define the size of the voxel grid
-const int gridWidth = 10;
-const int gridHeight = 10;
-const int gridDepth = 10;
+float voxel_resolution=0.05;
+Bonxai::VoxelGrid<float> grid( voxel_resolution );
 
 // Camera variables
 GLfloat cameraPositionX = 0.0f;
@@ -31,9 +29,8 @@ void processInput(GLFWwindow* window) {
     float cameraSpeed = 0.1f;
 
 // Calculate movement direction based on yaw angle
-float angleRad = degreesToRadians(cameraYaw);
-float dx = sin(angleRad);
-float dz = cos(angleRad);
+float dx = sin(cameraYaw);
+float dz = cos(cameraYaw);
 
 if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
     cameraPositionX += dx * cameraSpeed;
@@ -57,25 +54,9 @@ if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
     cameraPositionY -= cameraSpeed;
     }
 
-void renderText(const std::string& data, float x, float y, float scale) {
-    GLTtext *text = gltCreateText();
-    gltSetText(text, data.c_str());
-
-    // Begin text drawing (this for instance calls glUseProgram)
-    gltBeginDraw();
-
-    // Draw any amount of text between begin and end
-    gltColor(1.0f, 1.0f, 1.0f, 1.0f);
-    gltDrawText2D(text, x, y, scale);
-
-    // Finish drawing text
-    gltEndDraw();
-}
-
 // Function to draw a single voxel
-void drawVoxel(float x, float y, float z, float size) {
-
-    glColor3f(1.0f, 1.0f, 1.0f);
+void drawVoxel(float x, float y, float z, float size, float data) {
+    glColor3f(1.0-data, data, 0.0);
     glBegin(GL_QUADS);
     // Front face
     glVertex3f(x - size / 2, y - size / 2, z + size / 2);
@@ -109,7 +90,9 @@ void drawVoxel(float x, float y, float z, float size) {
     glVertex3f(x - size / 2, y + size / 2, z + size / 2);
     glEnd();
 
-    glColor3f(0.1f, 0.8f, 0.5f);
+    glColor3f(0.0,0.0,0.5);
+    float thickness = 1.5f; // Set your desired thickness here
+    glLineWidth(thickness);
     glBegin(GL_LINES);
     // Front face
     glVertex3f(x - size / 2, y - size / 2, z + size / 2);
@@ -151,25 +134,11 @@ void drawVoxel(float x, float y, float z, float size) {
 }
 
 // Function to render the voxel grid
-void renderGrid() {
-    float voxelSize = 0.2f; // Size of each voxel
-
-    // Loop through the voxel grid and draw each voxel
-    for (int x = 0; x < gridWidth; ++x) {
-        for (int y = 0; y < gridHeight; ++y) {
-            for (int z = 0; z < gridDepth; ++z) {
-                // Calculate the position of the voxel in 3D space
-                float posX = x * voxelSize;
-                float posY = y * voxelSize;
-                float posZ = z * voxelSize;
-
-                // Draw the voxel
-                if(x%2==0 && y%2==0 && z%2==0)
-                drawVoxel(posX, posY, posZ, voxelSize);
-            }
-        }
-    }
+void renderVoxel(const float& data, const Bonxai::CoordT& coord){
+    Bonxai::Point3D pos = grid.coordToPos(coord);
+    drawVoxel(pos.x,pos.y,pos.z,voxel_resolution,data);
 }
+
 void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
     static double lastX = xpos;
     static double lastY = ypos;
@@ -252,9 +221,33 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     } 
 }
-int main() {
-    // Initialize GLFW
-    if (!glfwInit()) {
+
+int main(int argc, char* argv[]) {
+  if (argc != 2) {
+    std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
+    return 1;
+  }
+
+  const std::string inputFileName = argv[1];
+
+  // Open the file for reading
+  std::ifstream inputFile(inputFileName, std::ios::binary);
+  if (!inputFile.is_open()) {
+    std::cerr << "Error: Unable to open file " << inputFileName << std::endl;
+    return 1;
+  }
+
+  // Read the header of the file to obtain information about the voxel grid
+  char header[256];
+  inputFile.getline(header, 256);
+  Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
+
+  // Deserialize the voxel grid from the file
+  auto grid = Bonxai::Deserialize<float>(inputFile, info);
+
+  // Close the file after deserialization
+  inputFile.close();
+  if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return -1;
     }
@@ -270,26 +263,11 @@ int main() {
 
     // Make the window's context current
     glfwMakeContextCurrent(window);
-    if (gl3wInit()) {
-        printf("failed to initialize OpenGL\n");
-        return -1;
-    }
+    
 
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
-    if (gl3wInit()) {
-        std::cerr << "Failed to initialize gl3w" << std::endl;
-        glfwDestroyWindow(window);
-        glfwTerminate();
-        return -1;
-    }
-    if (!gltInit())
-	{
-		fprintf(stderr, "Failed to initialize glText\n");
-		glfwTerminate();
-		return EXIT_FAILURE;
-	}
-
+    
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, keyCallback);
@@ -307,8 +285,7 @@ int main() {
         setupProjection(800,600);
 
         // Render the voxel grid
-        renderGrid();
-
+        grid.forEachCell(renderVoxel);
 
         // Swap front and back buffers
         glfwSwapBuffers(window);
@@ -318,7 +295,6 @@ int main() {
     }
 
     // Terminate GLFW
-    gltTerminate();
     glfwTerminate();
 
     return 0;

@@ -16,7 +16,6 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(glfw3 REQUIRED)
-find_package(gl3w REQUIRED)
 find_package(OpenGL REQUIRED)
 
 add_executable(mapping_node
@@ -25,17 +24,23 @@ add_executable(mapping_node
 add_executable(visualizer 
     src/visualizer.cpp)
 
+add_executable(serialization_test
+    src/serialization_test.cpp)
+
+target_include_directories(serialization_test PUBLIC include)
+
 ament_target_dependencies(mapping_node rclcpp sensor_msgs geometry_msgs cv_bridge message_filters tf2 tf2_ros image_transport tf2_geometry_msgs OpenCV cascade_msgs)
 target_include_directories(mapping_node PUBLIC include)
 
-ament_target_dependencies(visualizer gl3w glfw3 OpenGL tf2 tf2_geometry_msgs)
-target_link_libraries(visualizer ${OPENGL_LIBRARIES} glfw gl3w)
+ament_target_dependencies(visualizer glfw3 OpenGL tf2 tf2_geometry_msgs)
+target_link_libraries(visualizer ${OPENGL_LIBRARIES} glfw)
 target_include_directories(visualizer PUBLIC include)
 
 
 install(TARGETS
   mapping_node
   visualizer
+  serialization_test
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
