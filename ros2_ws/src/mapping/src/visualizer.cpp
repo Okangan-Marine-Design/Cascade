@@ -1,7 +1,10 @@
+#include <gl3w/GL/gl3w.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
 
+#define GLT_IMPLEMENTATION
+#include "gltext.h"
 
 // Define the size of the voxel grid
 const int gridWidth = 10;
@@ -54,7 +57,20 @@ if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
     cameraPositionY -= cameraSpeed;
     }
 
+void renderText(const std::string& data, float x, float y, float scale) {
+    GLTtext *text = gltCreateText();
+    gltSetText(text, data.c_str());
 
+    // Begin text drawing (this for instance calls glUseProgram)
+    gltBeginDraw();
+
+    // Draw any amount of text between begin and end
+    gltColor(1.0f, 1.0f, 1.0f, 1.0f);
+    gltDrawText2D(text, x, y, scale);
+
+    // Finish drawing text
+    gltEndDraw();
+}
 
 // Function to draw a single voxel
 void drawVoxel(float x, float y, float z, float size) {
@@ -242,6 +258,7 @@ int main() {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return -1;
     }
+    
 
     // Create a windowed mode window and its OpenGL context
     GLFWwindow* window = glfwCreateWindow(800, 600, "Voxel Grid", NULL, NULL);
@@ -253,9 +270,25 @@ int main() {
 
     // Make the window's context current
     glfwMakeContextCurrent(window);
+    if (gl3wInit()) {
+        printf("failed to initialize OpenGL\n");
+        return -1;
+    }
 
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
+    if (gl3wInit()) {
+        std::cerr << "Failed to initialize gl3w" << std::endl;
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        return -1;
+    }
+    if (!gltInit())
+	{
+		fprintf(stderr, "Failed to initialize glText\n");
+		glfwTerminate();
+		return EXIT_FAILURE;
+	}
 
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -276,6 +309,7 @@ int main() {
         // Render the voxel grid
         renderGrid();
 
+
         // Swap front and back buffers
         glfwSwapBuffers(window);
 
@@ -284,6 +318,7 @@ int main() {
     }
 
     // Terminate GLFW
+    gltTerminate();
     glfwTerminate();
 
     return 0;
