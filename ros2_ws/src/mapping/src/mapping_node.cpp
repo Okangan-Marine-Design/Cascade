@@ -75,10 +75,18 @@ void rgbd2pointcloud(const cascade_msgs::msg::ImageWithPose img) {
                 z += img.pose.position.z;
 
                 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
-                accessor.setValue(coord, 1.0f); // Set voxel value to 1.0
+                accessor.setValue(coord, min(1.0f,z/10.)); // Set voxel value to 1.0
             }
         }  
     }
+    std::ofstream outputFile("map.bx", std::ios::binary);
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Unable to open file for writing" << std::endl;
+        return 1;
+    }
+
+    Bonxai::Serialize(outputFile, grid);
+    outputFile.close();
     inserting=false;
 }
 
