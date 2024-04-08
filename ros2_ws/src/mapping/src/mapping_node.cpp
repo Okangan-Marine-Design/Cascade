@@ -44,10 +44,10 @@ void rgbd2pointcloud(const cascade_msgs::msg::ImageWithPose img) {
     cv::Mat depth_img = cv_bridge::toCvCopy(img.image)->image;
     int w = depth_img.cols;
     int h = depth_img.rows;
-    double cx = 320; // TODO: Use parameters for camera projection info
-    double cy = 240; // Current parameters are Gazebo Garden depth cam defaults
-    double fx_inv = 1.0 / 554;
-    double fy_inv = 1.0 / 554;
+    double cx = 160; // TODO: Use parameters for camera projection info
+    double cy = 120; // Current parameters are Gazebo Fortress depth cam defaults
+    double fx_inv = 1.0 / 277;
+    double fy_inv = 1.0 / 277;
 
     // Convert current pose to tf2 Transform
     tf2::Transform tf_current_pose;
@@ -55,7 +55,6 @@ void rgbd2pointcloud(const cascade_msgs::msg::ImageWithPose img) {
 
     // Robot's rotation matrix
     tf2::Matrix3x3 tf_R(tf_current_pose.getRotation());
-
     for (int u = 0; u < w; ++u) {
         for (int v = 0; v < h; ++v) {
             float z = depth_to_meters(depth_img.at<float>(v, u));   
@@ -64,25 +63,26 @@ void rgbd2pointcloud(const cascade_msgs::msg::ImageWithPose img) {
                 float y = z * ((v - cy) * fy_inv);
 
                 // Apply rotation to the point
+                /*
                 tf2::Vector3 rotated_point = tf_R * tf2::Vector3(x, y, z);
                 x = rotated_point.x();
                 y = rotated_point.y();
                 z = rotated_point.z();
-
+                */
                 // Translate the point according to robot's pose
                 x += img.pose.position.x;
                 y += img.pose.position.y;
                 z += img.pose.position.z;
 
                 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
-                accessor.setValue(coord, min(1.0f,z/10.)); // Set voxel value to 1.0
+                accessor.setValue(coord, std::min(1.0,z/10.0)); // Set voxel value to 1.0
             }
         }  
     }
     std::ofstream outputFile("map.bx", std::ios::binary);
     if (!outputFile.is_open()) {
         std::cerr << "Error: Unable to open file for writing" << std::endl;
-        return 1;
+        return;
     }
 
     Bonxai::Serialize(outputFile, grid);

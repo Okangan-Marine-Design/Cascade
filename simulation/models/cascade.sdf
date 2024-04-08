@@ -53,7 +53,6 @@
           <update_rate>10</update_rate>
           <topic>/sensors/camera/depth_map</topic>
           <camera>
-            <horizontal_fov>1.05</horizontal_fov>
             <image>
               <width>320</width>
               <height>240</height>
@@ -67,14 +66,13 @@
           </sensor>
         <sensor name="camera" type="camera">
           <camera>
-            <horizontal_fov>1.047</horizontal_fov>
             <image>
               <width>320</width>
               <height>240</height>
             </image>
             <clip>
               <near>0.1</near>
-              <far>100</far>
+              <far>10</far>
             </clip>
           </camera>
           <always_on>1</always_on>

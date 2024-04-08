@@ -12,7 +12,7 @@ Bonxai::VoxelGrid<float> grid( voxel_resolution );
 // Camera variables
 GLfloat cameraPositionX = 0.0f;
 GLfloat cameraPositionY = 0.0f;
-GLfloat cameraPositionZ = -7.0f;
+GLfloat cameraPositionZ = 0.0f;
 
 GLfloat cameraYaw = 0.0f;   // Yaw angle (rotation around the Y-axis)
 GLfloat cameraPitch = 0.0f; // Pitch angle (rotation around the X-axis)
@@ -90,8 +90,8 @@ void drawVoxel(float x, float y, float z, float size, float data) {
     glVertex3f(x - size / 2, y + size / 2, z + size / 2);
     glEnd();
 
-    glColor3f(0.0,0.0,0.5);
-    float thickness = 1.5f; // Set your desired thickness here
+    glColor4f(0.0,0.0,0.5,0.1);
+    float thickness = 1.0f; // Set your desired thickness here
     glLineWidth(thickness);
     glBegin(GL_LINES);
     // Front face
