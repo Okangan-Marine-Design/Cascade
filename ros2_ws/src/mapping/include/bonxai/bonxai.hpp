@@ -267,13 +267,13 @@ template <typename DataT>
 class VoxelGrid
 {
 public:
-  const uint32_t INNER_BITS;
-  const uint32_t LEAF_BITS;
-  const uint32_t Log2N;
-  const double resolution;
-  const double inv_resolution;
-  const uint32_t INNER_MASK;
-  const uint32_t LEAF_MASK;
+    uint32_t INNER_BITS;
+    uint32_t LEAF_BITS;
+    uint32_t Log2N;
+    double resolution;
+    double inv_resolution;
+    uint32_t INNER_MASK;
+    uint32_t LEAF_MASK;
 
   using LeafGrid = Grid<DataT>;
   using InnerGrid = Grid<std::shared_ptr<LeafGrid>>;

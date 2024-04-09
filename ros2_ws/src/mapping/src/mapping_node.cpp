@@ -57,25 +57,26 @@ void rgbd2pointcloud(const cascade_msgs::msg::ImageWithPose img) {
     tf2::Matrix3x3 tf_R(tf_current_pose.getRotation());
     for (int u = 0; u < w; ++u) {
         for (int v = 0; v < h; ++v) {
-            float z = depth_to_meters(depth_img.at<float>(v, u));   
-            if (z > 0 && z < MAX_DIST) {  
-                float x = z * ((u - cx) * fx_inv); // Calculate real world projection of each pixel
-                float y = z * ((v - cy) * fy_inv);
+            float x = depth_to_meters(depth_img.at<float>(v, u)); //x is depth  
+            float depth=x;
+            if (x > 0 && x < MAX_DIST) {  
+                float y = -x * ((u - cx) * fx_inv); // Calculate real world projection of each pixel
+                float z = x * ((v - cy) * fy_inv); // z is vertical, y is horizontal
 
                 // Apply rotation to the point
-                /*
+                
                 tf2::Vector3 rotated_point = tf_R * tf2::Vector3(x, y, z);
                 x = rotated_point.x();
                 y = rotated_point.y();
                 z = rotated_point.z();
-                */
+                
                 // Translate the point according to robot's pose
                 x += img.pose.position.x;
                 y += img.pose.position.y;
                 z += img.pose.position.z;
 
                 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
-                accessor.setValue(coord, std::min(1.0,z/10.0)); // Set voxel value to 1.0
+                accessor.setValue(coord, std::min(1.0,depth/10.0)); // Set voxel value to 1.0
             }
         }  
     }

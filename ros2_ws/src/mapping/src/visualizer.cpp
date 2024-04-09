@@ -7,7 +7,7 @@
 #include <vector>
 
 float voxel_resolution=0.05;
-Bonxai::VoxelGrid<float> grid( voxel_resolution );
+Bonxai::VoxelGrid<float> grid = Bonxai::VoxelGrid<float>(voxel_resolution);
 
 // Camera variables
 GLfloat cameraPositionX = 0.0f;
@@ -136,7 +136,7 @@ void drawVoxel(float x, float y, float z, float size, float data) {
 // Function to render the voxel grid
 void renderVoxel(const float& data, const Bonxai::CoordT& coord){
     Bonxai::Point3D pos = grid.coordToPos(coord);
-    drawVoxel(pos.x,pos.y,pos.z,voxel_resolution,data);
+    drawVoxel(-pos.y,pos.z,pos.x,voxel_resolution,data);
 }
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
@@ -219,40 +219,39 @@ GLfloat cross(GLfloat Ax, GLfloat Ay, GLfloat Az, GLfloat Bx, GLfloat By, GLfloa
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetCursorPosCallback(window, mouseCallback);
     } 
 }
 
+void updateGridFromFile(std::string inputFileName){
+    std::ifstream inputFile(inputFileName, std::ios::binary);
+    if (!inputFile.is_open()) {
+        std::cerr << "Error: Unable to open file " << inputFileName << std::endl;
+    }
+
+    // Read the header of the file to obtain information about the voxel grid
+    char header[256];
+    inputFile.getline(header, 256);
+    Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
+
+    // Deserialize the voxel grid from the file
+    auto g = Bonxai::Deserialize<float>(inputFile, info);
+    inputFile.close();
+    grid=std::move(g);
+}
+
 int main(int argc, char* argv[]) {
-  if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
-    return 1;
-  }
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
+        return 1;
+    }
 
-  const std::string inputFileName = argv[1];
+    updateGridFromFile(argv[1]);
 
-  // Open the file for reading
-  std::ifstream inputFile(inputFileName, std::ios::binary);
-  if (!inputFile.is_open()) {
-    std::cerr << "Error: Unable to open file " << inputFileName << std::endl;
-    return 1;
-  }
-
-  // Read the header of the file to obtain information about the voxel grid
-  char header[256];
-  inputFile.getline(header, 256);
-  Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
-
-  // Deserialize the voxel grid from the file
-  auto grid = Bonxai::Deserialize<float>(inputFile, info);
-
-  // Close the file after deserialization
-  inputFile.close();
-  if (!glfwInit()) {
+    if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return -1;
     }
-    
-
     // Create a windowed mode window and its OpenGL context
     GLFWwindow* window = glfwCreateWindow(800, 600, "Bonxai Voxel Visualizer", NULL, NULL);
     if (!window) {
@@ -273,6 +272,7 @@ int main(int argc, char* argv[]) {
     glfwSetKeyCallback(window, keyCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     // Loop until the user closes the window
+    int frameSinceLastUpdate=0;
     while (!glfwWindowShouldClose(window)) {
         // Process input
         processInput(window);
@@ -284,6 +284,11 @@ int main(int argc, char* argv[]) {
         setupCamera();
         setupProjection(800,600);
 
+        if(frameSinceLastUpdate>20){
+            updateGridFromFile(argv[1]);
+            frameSinceLastUpdate=0;
+        }
+            
         // Render the voxel grid
         grid.forEachCell(renderVoxel);
 
@@ -292,6 +297,7 @@ int main(int argc, char* argv[]) {
 
         // Poll for and process events
         glfwPollEvents();
+        frameSinceLastUpdate++;
     }
 
     // Terminate GLFW
