@@ -32,5 +32,10 @@ def generate_launch_description():
             package='localization',
             executable='dead_reckoning',
         ),
+        Node(
+            package='mapping',
+            executable='visualizer',
+            arguments=['map.bx','--live']
+        ),
         ]
     )

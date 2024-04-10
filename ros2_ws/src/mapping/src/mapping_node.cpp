@@ -23,7 +23,7 @@ const float MAX_DIST=15;
 std::shared_ptr<rclcpp::Node> node;
 bool inserting=false;
 
-double voxel_resolution = 0.05;
+double voxel_resolution = 0.2;
 Bonxai::VoxelGrid<float> grid( voxel_resolution );
 
 
@@ -53,6 +53,20 @@ void rgbd2pointcloud(const cascade_msgs::msg::ImageWithPose img) {
     tf2::Transform tf_current_pose;
     tf2::fromMsg(img.pose, tf_current_pose);
 
+    double roll, pitch, yaw;
+    tf2::Matrix3x3(tf_current_pose.getRotation()).getRPY(roll, pitch, yaw);
+
+    // Multiply pitch and roll by -1
+    pitch *= -1.0;
+    roll *= -1.0;
+
+    // Create a quaternion from the modified Euler angles
+    tf2::Quaternion q;
+    q.setRPY(roll, pitch, yaw);
+
+    // Create a new transform with the modified orientation
+    tf_current_pose.setRotation(q);
+
     // Robot's rotation matrix
     tf2::Matrix3x3 tf_R(tf_current_pose.getRotation());
     for (int u = 0; u < w; ++u) {
@@ -76,7 +90,7 @@ void rgbd2pointcloud(const cascade_msgs::msg::ImageWithPose img) {
                 z += img.pose.position.z;
 
                 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
-                accessor.setValue(coord, std::min(1.0,depth/10.0)); // Set voxel value to 1.0
+                accessor.setValue(coord, std::min(1.0,depth/10.0)); // Set voxel value 
             }
         }  
     }

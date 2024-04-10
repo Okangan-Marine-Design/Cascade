@@ -6,7 +6,7 @@
 #include <sstream>
 #include <vector>
 
-float voxel_resolution=0.05;
+float voxel_resolution=0.05;//update this to adapt to the grid
 Bonxai::VoxelGrid<float> grid = Bonxai::VoxelGrid<float>(voxel_resolution);
 
 // Camera variables
@@ -136,7 +136,7 @@ void drawVoxel(float x, float y, float z, float size, float data) {
 // Function to render the voxel grid
 void renderVoxel(const float& data, const Bonxai::CoordT& coord){
     Bonxai::Point3D pos = grid.coordToPos(coord);
-    drawVoxel(-pos.y,pos.z,pos.x,voxel_resolution,data);
+    drawVoxel(pos.y,pos.z,pos.x,grid.resolution,data);
 }
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
@@ -230,22 +230,32 @@ void updateGridFromFile(std::string inputFileName){
     }
 
     // Read the header of the file to obtain information about the voxel grid
-    char header[256];
-    inputFile.getline(header, 256);
-    Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
+    try{
+        char header[256];
+        inputFile.getline(header, 256);
+        Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
 
-    // Deserialize the voxel grid from the file
-    auto g = Bonxai::Deserialize<float>(inputFile, info);
-    inputFile.close();
-    grid=std::move(g);
+        // Deserialize the voxel grid from the file
+        auto g = Bonxai::Deserialize<float>(inputFile, info);
+        inputFile.close();
+        grid=std::move(g);
+    }
+    catch(...){
+        std::cout<<"could not parse bonxai file\n";
+    }
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
+    if  (argc == 1) {
+        std::cerr << "Usage: " << argv[0] << " <input_file> \n Options: --live for live updating from file" << std::endl;
         return 1;
     }
-
+    bool live=false;
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--live") {
+            live=true;
+        }
+    }
     updateGridFromFile(argv[1]);
 
     if (!glfwInit()) {
@@ -283,10 +293,12 @@ int main(int argc, char* argv[]) {
         // Set up the view matrix
         setupCamera();
         setupProjection(800,600);
-
-        if(frameSinceLastUpdate>20){
-            updateGridFromFile(argv[1]);
-            frameSinceLastUpdate=0;
+        if(live){
+            if(frameSinceLastUpdate>30){
+                updateGridFromFile(argv[1]);
+                frameSinceLastUpdate=0;
+            }
+            frameSinceLastUpdate++;
         }
             
         // Render the voxel grid
@@ -297,7 +309,6 @@ int main(int argc, char* argv[]) {
 
         // Poll for and process events
         glfwPollEvents();
-        frameSinceLastUpdate++;
     }
 
     // Terminate GLFW

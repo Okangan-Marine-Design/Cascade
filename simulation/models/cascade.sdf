@@ -50,7 +50,7 @@
         <mass>0</mass>
       </inertial>
         <sensor name="depth_camera" type="depth_camera">
-          <update_rate>10</update_rate>
+          <update_rate>30</update_rate>
           <topic>/sensors/camera/depth_map</topic>
           <camera>
             <image>
