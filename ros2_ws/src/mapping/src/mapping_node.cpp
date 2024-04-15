@@ -5,6 +5,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "cascade_msgs/msg/image_with_pose.hpp"
 #include "cascade_msgs/srv/find_object.hpp"
+#include "cascade_msgs/msg/voxel_grid.hpp"
 #include <opencv2/core/core.hpp>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/LinearMath/Vector3.h>
@@ -21,6 +22,7 @@ using std::placeholders::_2;
 
 const float MAX_DIST=15;
 std::shared_ptr<rclcpp::Node> node;
+rclcpp::Publisher<cascade_msgs::msg::VoxelGrid>::SharedPtr gridPublisher;
 bool inserting=false;
 
 double voxel_resolution = 0.2;
@@ -37,9 +39,22 @@ void find_object_callback(const std::shared_ptr<cascade_msgs::srv::FindObject::R
         
 }
 
-void rgbd2pointcloud(const cascade_msgs::msg::ImageWithPose img) {
+void publishVoxelGrid(){
+    std::ostringstream ofile(std::ios::binary);
+    Bonxai::Serialize(ofile, grid);
+    std::string s=ofile.str();
+    
+    cascade_msgs::msg::VoxelGrid gridMsg;
+
+    std::vector<unsigned char> charVector(s.begin(), s.end());
+    gridMsg.data=charVector;
+
+    gridPublisher->publish(gridMsg);
+}
+
+bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
     auto accessor = grid.createAccessor();
-    if(inserting) return;
+    if(inserting) return false;//return fail to insert
     inserting=true;//making sure we dont insert multiple depth scans at once
     cv::Mat depth_img = cv_bridge::toCvCopy(img.image)->image;
     int w = depth_img.cols;
@@ -87,27 +102,31 @@ void rgbd2pointcloud(const cascade_msgs::msg::ImageWithPose img) {
                 // Translate the point according to robot's pose
                 x += img.pose.position.x;
                 y += img.pose.position.y;
-                z += img.pose.position.z;
+                z -= img.pose.position.z;
 
                 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
                 accessor.setValue(coord, std::min(1.0,depth/10.0)); // Set voxel value 
             }
         }  
     }
+    /*
     std::ofstream outputFile("map.bx", std::ios::binary);
     if (!outputFile.is_open()) {
         std::cerr << "Error: Unable to open file for writing" << std::endl;
-        return;
+        return false;//return failed to insert into file
     }
 
     Bonxai::Serialize(outputFile, grid);
     outputFile.close();
+    */
+    publishVoxelGrid();
     inserting=false;
+    return true;
 }
 
 void img_subscription_callback(const cascade_msgs::msg::ImageWithPose &img_msg){
     //possibly add a queue for inserting the depth maps?
-    rgbd2pointcloud(img_msg);
+    insertDepthImage(img_msg);
 }
 
 int main(int argc, char **argv)
@@ -121,6 +140,9 @@ int main(int argc, char **argv)
 
     rclcpp::Subscription<cascade_msgs::msg::ImageWithPose>::SharedPtr img_subscription=
     node->create_subscription<cascade_msgs::msg::ImageWithPose>("/semantic_depth_with_pose",10, &img_subscription_callback);
+
+    gridPublisher = node->create_publisher<cascade_msgs::msg::VoxelGrid>("/voxel_grid", 10);
+
     rclcpp::Service<cascade_msgs::srv::FindObject>::SharedPtr service=node->create_service<cascade_msgs::srv::FindObject>("find_object", &find_object_callback);
 
     rclcpp::spin(node);

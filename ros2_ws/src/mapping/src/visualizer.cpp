@@ -3,11 +3,15 @@
 #include <cmath>
 #include "bonxai/bonxai.hpp"
 #include "bonxai/serialization.hpp"
+
+#include "rclcpp/rclcpp.hpp"
+#include "cascade_msgs/msg/voxel_grid.hpp"
 #include <sstream>
 #include <vector>
 
 float voxel_resolution=0.05;//update this to adapt to the grid
 Bonxai::VoxelGrid<float> grid = Bonxai::VoxelGrid<float>(voxel_resolution);
+std::shared_ptr<rclcpp::Node> node;
 
 // Camera variables
 GLfloat cameraPositionX = 0.0f;
@@ -222,6 +226,22 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
         glfwSetCursorPosCallback(window, mouseCallback);
     } 
 }
+bool loading=false;
+
+void updateGridFromMsg(const cascade_msgs::msg::VoxelGrid &msg){
+    if(loading)return;
+    loading=true;
+    std::string serialized_data(msg.data.begin(), msg.data.end());
+
+    std::istringstream ifile(serialized_data, std::ios::binary);
+    
+    char header[256];
+    ifile.getline(header, 256);
+    Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
+    auto g = Bonxai::Deserialize<float>(ifile, info);
+    grid=std::move(g);
+    loading=false;
+}
 
 void updateGridFromFile(std::string inputFileName){
     std::ifstream inputFile(inputFileName, std::ios::binary);
@@ -246,17 +266,27 @@ void updateGridFromFile(std::string inputFileName){
 }
 
 int main(int argc, char* argv[]) {
-    if  (argc == 1) {
-        std::cerr << "Usage: " << argv[0] << " <input_file> \n Options: --live for live updating from file" << std::endl;
-        return 1;
+    rclcpp::init(argc, argv);
+
+    //creates node as shared pointer
+    node = rclcpp::Node::make_shared("voxel_visualizer");
+
+    if  (false && argc == 1) {
+        std::cerr << "Usage: " << argv[0] << " <input_file> \n Options: --file <file_name.bx> to load from file" << std::endl;
+        return -1;
     }
-    bool live=false;
+    bool file=false;
+    int fileIndex;
     for (int i = 1; i < argc; ++i) {
-        if (std::string(argv[i]) == "--live") {
-            live=true;
+        if (std::string(argv[i]) == "--file") {
+            file=true;
+            fileIndex=i+1;
         }
     }
-    updateGridFromFile(argv[1]);
+    
+    rclcpp::Subscription<cascade_msgs::msg::VoxelGrid>::SharedPtr grid_subscription= node->create_subscription<cascade_msgs::msg::VoxelGrid>("/voxel_grid",10, &updateGridFromMsg);
+    if(file)
+        updateGridFromFile(argv[fileIndex]);
 
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -273,7 +303,6 @@ int main(int argc, char* argv[]) {
     // Make the window's context current
     glfwMakeContextCurrent(window);
     
-
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
     
@@ -282,7 +311,7 @@ int main(int argc, char* argv[]) {
     glfwSetKeyCallback(window, keyCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     // Loop until the user closes the window
-    int frameSinceLastUpdate=0;
+    int frameSinceLastUpdate=-1;
     while (!glfwWindowShouldClose(window)) {
         // Process input
         processInput(window);
@@ -293,14 +322,14 @@ int main(int argc, char* argv[]) {
         // Set up the view matrix
         setupCamera();
         setupProjection(800,600);
-        if(live){
-            if(frameSinceLastUpdate>30){
-                updateGridFromFile(argv[1]);
+        if(!file){
+            if(frameSinceLastUpdate>10 || frameSinceLastUpdate<0){
+                rclcpp::spin_some(node);
+
                 frameSinceLastUpdate=0;
             }
             frameSinceLastUpdate++;
         }
-            
         // Render the voxel grid
         grid.forEachCell(renderVoxel);
 
@@ -313,6 +342,7 @@ int main(int argc, char* argv[]) {
 
     // Terminate GLFW
     glfwTerminate();
+    rclcpp::shutdown();
 
     return 0;
 }

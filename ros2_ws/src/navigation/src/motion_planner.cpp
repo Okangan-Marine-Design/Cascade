@@ -31,7 +31,11 @@ class MotionPlannerNode : public rclcpp::Node
         }
 
         void goal_status_callback(cascade_msgs::msg::Status msg){
-        
+            
+        }
+
+        void calculatePath(){
+            
         }
 
         rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr pose_subscription_;
