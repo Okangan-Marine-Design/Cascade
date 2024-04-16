@@ -24,9 +24,16 @@ std::shared_ptr<rclcpp::Node> node;
 double voxel_resolution = 0.2;
 Bonxai::VoxelGrid<float> grid( voxel_resolution );
 
-void img_subscription_callback(const cascade_msgs::msg::ImageWithPose &img_msg){
-    //possibly add a queue for inserting the depth maps?
-    rgbd2pointcloud(img_msg);
+void updateGridFromMsg(const cascade_msgs::msg::VoxelGrid &msg){
+    std::string serialized_data(msg.data.begin(), msg.data.end());
+
+    std::istringstream ifile(serialized_data, std::ios::binary);
+    
+    char header[256];
+    ifile.getline(header, 256);
+    Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
+    auto g = Bonxai::Deserialize<float>(ifile, info);
+    grid=std::move(g);
 }
 
 int main(int argc, char **argv)
@@ -39,7 +46,7 @@ int main(int argc, char **argv)
             "created cost_map_server node!");
 
     rclcpp::Subscription<cascade_msgs::msg::ImageWithPose>::SharedPtr img_subscription=
-    node->create_subscription<cascade_msgs::msg::ImageWithPose>("/semantic_depth_with_pose",10, &img_subscription_callback);
+    node->create_subscription<cascade_msgs::msg::ImageWithPose>("/",10, &img_subscription_callback);
     rclcpp::Service<cascade_msgs::srv::FindObject>::SharedPtr service=node->create_service<cascade_msgs::srv::FindObject>("find_object", &find_object_callback);
 
     rclcpp::spin(node);

@@ -27,6 +27,7 @@ add_executable(motor_cortex
 ament_target_dependencies(motor_cortex rclcpp std_msgs cascade_msgs tf2 tf2_geometry_msgs)
 ament_target_dependencies(navigator rclcpp std_msgs sensor_msgs cascade_msgs geometry_msgs tf2_geometry_msgs tf2)
 ament_target_dependencies(motion_planner rclcpp std_msgs sensor_msgs cascade_msgs geometry_msgs tf2_geometry_msgs tf2)
+target_include_directories(motion_planner PUBLIC include)
 
 install(TARGETS
   navigator

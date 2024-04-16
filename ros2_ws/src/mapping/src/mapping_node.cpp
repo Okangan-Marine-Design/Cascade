@@ -105,7 +105,7 @@ bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
                 z -= img.pose.position.z;
 
                 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
-                accessor.setValue(coord, std::min(1.0,depth/10.0)); // Set voxel value 
+                accessor.setValue(coord, 1.0); // Set voxel value 
             }
         }  
     }
