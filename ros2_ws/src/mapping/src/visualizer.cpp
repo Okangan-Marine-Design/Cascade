@@ -67,18 +67,19 @@ void drawVoxel(float x, float y, float z, float size, float data) {
         b=0.5;
         a=1.0;
     }
-    if(data==2.0){//path
+    else if(data==2.0){//path
         r=1.0;
         g=0.0;
         b=0.0;
         a=1.0;
     }
-    if(data==3.0){//costmap inflation area
+    else if(data==3.0){//costmap inflation area
         r=0.5;
         g=0.0;
         b=0.5;
         a=0.3;
     }
+    else return;
     glColor4f(r, g, b,a);
     glBegin(GL_QUADS);
     // Front face
@@ -158,8 +159,10 @@ void drawVoxel(float x, float y, float z, float size, float data) {
 
 // Function to render the voxel grid
 void renderVoxel(const float& data, const Bonxai::CoordT& coord){
-    Bonxai::Point3D pos = grid.coordToPos(coord);
-    drawVoxel(pos.y,pos.z,pos.x,grid.resolution,data);
+    if(data<=3 && data>=1){
+        Bonxai::Point3D pos = grid.coordToPos(coord);
+        drawVoxel(pos.y,pos.z,pos.x,grid.resolution,data);
+    }
 }
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos) {

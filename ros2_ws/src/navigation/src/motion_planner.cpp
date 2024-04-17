@@ -21,8 +21,9 @@ typedef cascade_msgs::msg::GoalPose gpose;
 class MotionPlannerNode : public rclcpp::Node
 {
     public:
+        bool inserted=false;
         MotionPlannerNode() 
-        : Node("motion_planner_node"), costmap(0.2), accessor(costmap){ 
+        : Node("motion_planner_node"), costmap(0.2){ 
 
         end_pose_subscription = this->create_subscription<cascade_msgs::msg::GoalPose>("/end_goal_pose", 10, std::bind(&MotionPlannerNode::end_pose_callback, this, _1));
 
@@ -41,7 +42,6 @@ class MotionPlannerNode : public rclcpp::Node
             //set end goal pose
             currentEndPoseMsg=msg;
             haveGoal=true;
-            calculatePath();//when we get a new end pose calculate a new path
         }
         void current_pose_callback(geometry_msgs::msg::PoseStamped msg){
             //set current pose
@@ -56,13 +56,12 @@ class MotionPlannerNode : public rclcpp::Node
         }
 
         void costmap_callback(cascade_msgs::msg::VoxelGrid msg){
-            if(replaceCostmap(msg))//if the costmap is successfully replaced
-                if(checkNewObstacles())//check if there are any new obstacles
-                    calculatePath();//recalculate path only if there are new obstacles between the auv and the goal
+            replaceCostmap(msg);
+            calculatePath();
         }
 
         bool replaceCostmap(cascade_msgs::msg::VoxelGrid msg){
-            if(loading)return false;
+            if(loading || searching)return false;
             loading=true;
             std::string serialized_data(msg.data.begin(), msg.data.end());
 
@@ -71,8 +70,10 @@ class MotionPlannerNode : public rclcpp::Node
             char header[256];
             ifile.getline(header, 256);
             Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
-            costmap=std::move(Bonxai::Deserialize<float>(ifile, info));
+            auto g=Bonxai::Deserialize<float>(ifile, info);
+            costmap=std::move(g);
             loading=false;
+            inserted=true;
             return true;
         }
 
@@ -115,6 +116,7 @@ class MotionPlannerNode : public rclcpp::Node
         }
 
         void clear_path_nodes(std::vector<node> pathNodes){
+            auto accessor=costmap.createAccessor();
             for(node n: pathNodes){
                 Bonxai::CoordT coord = costmap.posToCoord(n.x, n.y, n.z);
                 accessor.setCellOff( coord );
@@ -137,11 +139,15 @@ class MotionPlannerNode : public rclcpp::Node
 
         std::vector<node> aStarSearch(){
             std::vector<node> result;
+            auto accessor=costmap.createAccessor();
             //RCLCPP_INFO(this->get_logger(), "starting a*");
             node start,goal;
             start.x = currentPoseMsg.pose.position.x;
             start.y = currentPoseMsg.pose.position.y;
             start.z = -currentPoseMsg.pose.position.z;
+            //start.x=0;
+            //start.y=0;
+            //start.z=0;
             goal.x = currentEndPoseMsg.pose.position.x;
             goal.y = currentEndPoseMsg.pose.position.y;
             goal.z = -currentEndPoseMsg.pose.position.z;//why does this need to be negative i have no clue
@@ -175,13 +181,14 @@ class MotionPlannerNode : public rclcpp::Node
                     for(int y=-1;y<=1;y++){
                         for(int z=-1;z<=1;z++){
                             node tempNode;
-                            tempNode.x=current.x+x*costmap.resolution;
-                            tempNode.y=current.y+y*costmap.resolution;
-                            tempNode.z=current.z+z*costmap.resolution;
+                            tempNode.x=current.x+x*costmap.resolution*0.75;
+                            tempNode.y=current.y+y*costmap.resolution*0.75;
+                            tempNode.z=current.z+z*costmap.resolution*0.75;
                             Bonxai::CoordT coord = costmap.posToCoord(tempNode.x, tempNode.y, tempNode.z);
                             float* value_ptr = accessor.value( coord );
                             bool valid=false;
                             if(value_ptr==nullptr)valid=true;
+                            else if(*value_ptr==0.0)valid=true;
                             if(valid){
                                 if(checked.count(tempNode)>0){
                                     tempNode=*checked.find(tempNode);
@@ -214,7 +221,7 @@ class MotionPlannerNode : public rclcpp::Node
 
         std::vector<node> bestFirstSearch(){
             std::vector<node> result;
-            if(searching)return result;
+            auto accessor=costmap.createAccessor();
             //start node -> check every node around 
             //for each valid node (not an obstacle) check the straight line distance to the goal
             //add current node to list of path nodes
@@ -263,6 +270,7 @@ class MotionPlannerNode : public rclcpp::Node
                 surrounding.clear();
                 current=best;
                 visited.insert(best);
+                result.push_back(best);
             }
             //push back results (back track from goal)
             return result;
@@ -270,7 +278,8 @@ class MotionPlannerNode : public rclcpp::Node
 
         std::queue<gpose> calculatePath(){//best first search at the moment, if it turns out to be too slow the algo will be changed
             std::queue<gpose> result;
-            if(searching)return result;
+            if(searching || loading)return result;
+            auto accessor=costmap.createAccessor();
             searching=true;
             std::vector<node> path=aStarSearch();
             for(node n: path){
@@ -284,7 +293,6 @@ class MotionPlannerNode : public rclcpp::Node
         }
 
         bool loading=false, haveGoal=false, searching=false;
-        Bonxai::VoxelGrid<float>::Accessor accessor;
         Bonxai::VoxelGrid<float> costmap;
         rclcpp::Publisher<cascade_msgs::msg::VoxelGrid>::SharedPtr gridPublisher;
         geometry_msgs::msg::PoseStamped currentPoseMsg;
