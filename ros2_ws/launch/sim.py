@@ -74,6 +74,8 @@ def generate_launch_description():
         Node(
             package='navigation',
             executable='motion_planner',
+            #prefix=['gdbserver localhost:3000']
+            #target remote localhost:3000
         ),
         Node(
             package='navigation',

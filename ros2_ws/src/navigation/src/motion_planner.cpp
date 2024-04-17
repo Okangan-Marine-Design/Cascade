@@ -81,17 +81,31 @@ class MotionPlannerNode : public rclcpp::Node
         }
         class node{
             public:
-            float x,y,z;
+            float x,y,z,dist,cost;
             bool operator==(const node& n) const{
-                return x == n.x && y == n.y && z==n.z;
+                return abs(x - n.x)<0.1 && abs(y - n.y)<0.1 && abs(z - n.z)<0.1;
             }
+            bool operator<(const node& n) const{
+                return (cost+dist)<(n.cost+n.dist);
+            }
+
         };
         
         struct nodeHash {
             std::size_t operator()(const node& s) const {
-                return std::hash<float>()(s.x) ^ (std::hash<float>()(s.y) << 1);
+                std::size_t hashX = std::hash<float>()(s.x);
+                std::size_t hashY = std::hash<float>()(s.y);
+                std::size_t hashZ = std::hash<float>()(s.z);
+
+                // Combine hash values using bitwise XOR and multiplication
+                return hashX ^ (hashY << 1) ^ (hashZ << 2);
             }
         };
+        
+        struct nodeCompare {
+            bool operator()(const node& n1, const node& n2) const { return (n1.cost+n1.dist)>(n2.cost+n2.dist); }
+        };
+
         float dist(node n1, node n2){
             return pow(
                         pow(n1.x-n2.x,2)+
@@ -99,6 +113,7 @@ class MotionPlannerNode : public rclcpp::Node
                         pow(n1.z-n2.z,2)
                         ,1.0/2.0);
         }
+
         void clear_path_nodes(std::vector<node> pathNodes){
             for(node n: pathNodes){
                 Bonxai::CoordT coord = costmap.posToCoord(n.x, n.y, n.z);
@@ -120,10 +135,86 @@ class MotionPlannerNode : public rclcpp::Node
             gridPublisher->publish(gridMsg);
         }
 
+        std::vector<node> aStarSearch(){
+            std::vector<node> result;
+            //RCLCPP_INFO(this->get_logger(), "starting a*");
+            node start,goal;
+            start.x = currentPoseMsg.pose.position.x;
+            start.y = currentPoseMsg.pose.position.y;
+            start.z = -currentPoseMsg.pose.position.z;
+            goal.x = currentEndPoseMsg.pose.position.x;
+            goal.y = currentEndPoseMsg.pose.position.y;
+            goal.z = -currentEndPoseMsg.pose.position.z;//why does this need to be negative i have no clue
+
+            std::vector<node> surrounding;
+            std::unordered_set<node, nodeHash> checked;
+            std::unordered_map<node, node, nodeHash> previous;
+            std::priority_queue<node, std::vector<node>, nodeCompare> openSet;
+            start.cost=0;
+            start.dist=dist(start,goal)*10;
+            openSet.push(start);
+            checked.insert(start);
+
+            while(!openSet.empty()){
+                node current=openSet.top();
+                if(current==goal){
+
+                    //RCLCPP_INFO(this->get_logger(), "found goal");
+                    while(previous.count(current)>0){
+                        result.push_back(current);
+                        current=previous[current];
+                    }
+                    //std::string logMessage = "returning with " + std::to_string(result.size()) + " path nodes";
+                    //RCLCPP_INFO(this->get_logger(), logMessage.c_str());
+                    return result;
+                }
+                openSet.pop();
+                //checked.erase(current);
+                //creating set of neighboring nodes
+                for(int x=-1;x<=1;x++){
+                    for(int y=-1;y<=1;y++){
+                        for(int z=-1;z<=1;z++){
+                            node tempNode;
+                            tempNode.x=current.x+x*costmap.resolution;
+                            tempNode.y=current.y+y*costmap.resolution;
+                            tempNode.z=current.z+z*costmap.resolution;
+                            Bonxai::CoordT coord = costmap.posToCoord(tempNode.x, tempNode.y, tempNode.z);
+                            float* value_ptr = accessor.value( coord );
+                            bool valid=false;
+                            if(value_ptr==nullptr)valid=true;
+                            if(valid){
+                                if(checked.count(tempNode)>0){
+                                    tempNode=*checked.find(tempNode);
+                                }else
+                                    tempNode.cost=std::numeric_limits<float>::infinity();
+                                surrounding.push_back(tempNode);
+                            }
+                        }
+                    }
+                }
+                for(node n: surrounding){
+                    float score=current.cost+dist(current,n);
+                    if(score<n.cost){
+                        previous[n]=current;
+                        n.cost=score;
+                        n.dist=dist(n,goal)*10;
+                        if(checked.count(n)==0){
+                            checked.insert(n);
+                            openSet.push(n);
+                            //result.push_back(n);
+                        }
+                    }
+                }
+                surrounding.clear();
+                //std::string logMessage = "explored nodes " + std::to_string(checked.size());
+                //RCLCPP_INFO(this->get_logger(), logMessage.c_str());
+            }
+            return result;
+        }
+
         std::vector<node> bestFirstSearch(){
             std::vector<node> result;
             if(searching)return result;
-            searching=true;
             //start node -> check every node around 
             //for each valid node (not an obstacle) check the straight line distance to the goal
             //add current node to list of path nodes
@@ -145,9 +236,9 @@ class MotionPlannerNode : public rclcpp::Node
                     for(int y=-1;y<=1;y++){
                         for(int z=-1;z<=1;z++){
                             node tempNode;
-                            tempNode.x=current.x+x*costmap.resolution*0.75;
-                            tempNode.y=current.y+y*costmap.resolution*0.75;
-                            tempNode.z=current.z+z*costmap.resolution*0.75;
+                            tempNode.x=current.x+x*costmap.resolution;
+                            tempNode.y=current.y+y*costmap.resolution;
+                            tempNode.z=current.z+z*costmap.resolution;
                             if(visited.count(tempNode)==0){
                                 surrounding.push_back(tempNode);
                             }
@@ -157,7 +248,7 @@ class MotionPlannerNode : public rclcpp::Node
                 //std::string logMessage = "There are " + std::to_string(surrounding.size()) + " valid neighbors";
                 //RCLCPP_INFO(this->get_logger(), logMessage.c_str());
                 node best;
-                float minDist=std::numeric_limits<float>::infinity();;
+                float minDist=std::numeric_limits<float>::infinity();
                 for(node n: surrounding){
                     Bonxai::CoordT coord = costmap.posToCoord(n.x, n.y, n.z);
                     float* value_ptr = accessor.value( coord );
@@ -171,22 +262,24 @@ class MotionPlannerNode : public rclcpp::Node
                 }
                 surrounding.clear();
                 current=best;
-                result.push_back(best);
                 visited.insert(best);
             }
-            searching=false;
+            //push back results (back track from goal)
             return result;
         }
 
         std::queue<gpose> calculatePath(){//best first search at the moment, if it turns out to be too slow the algo will be changed
             std::queue<gpose> result;
-            std::vector<node> path=bestFirstSearch();
+            if(searching)return result;
+            searching=true;
+            std::vector<node> path=aStarSearch();
             for(node n: path){
                 accessor.setValue(costmap.posToCoord(n.x,n.y,n.z), 2.0);
             }
             //insert the path nodes into the costmap and publish under /path_grid
             publishVoxelGrid();
             clear_path_nodes(path);
+            searching=false;
             return result;
         }
 
@@ -203,7 +296,6 @@ class MotionPlannerNode : public rclcpp::Node
         rclcpp::Publisher<cascade_msgs::msg::GoalPose>::SharedPtr goal_pose_publisher;
         rclcpp::Publisher<cascade_msgs::msg::Status>::SharedPtr status_publisher;
 };
-
 
 int main(int argc, char * argv[])
 {
