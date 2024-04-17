@@ -157,7 +157,7 @@ class MotionPlannerNode : public rclcpp::Node
             std::unordered_map<node, node, nodeHash> previous;
             std::priority_queue<node, std::vector<node>, nodeCompare> openSet;
             start.cost=0;
-            start.dist=dist(start,goal)*10;
+            start.dist=pow(dist(start,goal),2);
             openSet.push(start);
             checked.insert(start);
 
@@ -204,7 +204,7 @@ class MotionPlannerNode : public rclcpp::Node
                     if(score<n.cost){
                         previous[n]=current;
                         n.cost=score;
-                        n.dist=dist(n,goal)*10;
+                        n.dist=pow(dist(n,goal),2);
                         if(checked.count(n)==0){
                             checked.insert(n);
                             openSet.push(n);
