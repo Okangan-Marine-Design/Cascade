@@ -283,6 +283,21 @@ void updateGridFromFile(std::string inputFileName){
         std::cout<<"could not parse bonxai file\n";
     }
 }
+void renderGridLines(float range) {
+    glColor3f(0.5f, 0.5f, 0.5f); // Set grid line color (grey)
+    glBegin(GL_LINES);
+    // Draw horizontal lines (along X-axis)
+    for(float i = -range; i <= range; i += 1.0f) {
+        glVertex3f(-range, 0.0f, i);
+        glVertex3f(range, 0.0f, i);
+    }
+    // Draw vertical lines (along Z-axis)
+    for(float i = -range; i <= range; i += 1.0f) {
+        glVertex3f(i, 0.0f, -range);
+        glVertex3f(i, 0.0f, range);
+    }
+    glEnd();
+}
 
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
@@ -303,7 +318,7 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    rclcpp::Subscription<cascade_msgs::msg::VoxelGrid>::SharedPtr grid_subscription= node->create_subscription<cascade_msgs::msg::VoxelGrid>("/voxel_grid",10, &updateGridFromMsg);
+    rclcpp::Subscription<cascade_msgs::msg::VoxelGrid>::SharedPtr grid_subscription= node->create_subscription<cascade_msgs::msg::VoxelGrid>("/path_grid",10, &updateGridFromMsg);
     if(file)
         updateGridFromFile(argv[fileIndex]);
 
@@ -349,6 +364,8 @@ int main(int argc, char* argv[]) {
             }
             frameSinceLastUpdate++;
         }
+
+        renderGridLines(100.0);
         // Render the voxel grid
         grid.forEachCell(renderVoxel);
 

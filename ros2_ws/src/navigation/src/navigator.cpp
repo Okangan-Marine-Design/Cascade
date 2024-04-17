@@ -7,6 +7,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "cascade_msgs/msg/movement_command.hpp"
 #include "cascade_msgs/srv/find_object.hpp"
+#include "cascade_msgs/msg/goal_pose.hpp"
 #include "cascade_msgs/msg/status.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
@@ -24,7 +25,7 @@ class NavigatorNode : public rclcpp::Node
         command_subscription_ =
             this->create_subscription<cascade_msgs::msg::MovementCommand>("/movement_command", 10, std::bind(&NavigatorNode::movement_command_callback, this, _1));
 
-            pose_publisher_ = this->create_publisher<geometry_msgs::msg::Pose>("/end_goal_pose", 10);
+            pose_publisher_ = this->create_publisher<cascade_msgs::msg::GoalPose>("/end_goal_pose", 10);
             status_publisher_ = this->create_publisher<cascade_msgs::msg::Status>("/movement_command_status", 10);
 
             status_subscription_ = 
@@ -79,7 +80,7 @@ class NavigatorNode : public rclcpp::Node
         rclcpp::Subscription<cascade_msgs::msg::MovementCommand>::SharedPtr command_subscription_;
         rclcpp::Subscription<cascade_msgs::msg::Status>::SharedPtr status_subscription_;
         rclcpp::Publisher<cascade_msgs::msg::Status>::SharedPtr status_publisher_;
-        rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr pose_publisher_;
+        rclcpp::Publisher<cascade_msgs::msg::GoalPose>::SharedPtr pose_publisher_;
         rclcpp::Client<cascade_msgs::srv::FindObject>::SharedPtr client;
         std::shared_ptr<rclcpp::Node> subNode;
 };
