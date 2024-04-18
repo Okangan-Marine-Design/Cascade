@@ -152,6 +152,10 @@ class MotionPlannerNode : public rclcpp::Node
             goal.y = currentEndPoseMsg.pose.position.y;
             goal.z = -currentEndPoseMsg.pose.position.z;//why does this need to be negative i have no clue
 
+            Bonxai::CoordT coord = costmap.posToCoord(goal.x, goal.y, goal.z);
+            float* goal_value = accessor.value( coord );
+            if(goal_value!=nullptr)return result;//if goal is inside an obstacle dont even try
+
             std::vector<node> surrounding;
             std::unordered_set<node, nodeHash> checked;
             std::unordered_map<node, node, nodeHash> previous;
@@ -160,14 +164,15 @@ class MotionPlannerNode : public rclcpp::Node
             start.dist=pow(dist(start,goal),2);
             openSet.push(start);
             checked.insert(start);
+            bool reachable=true;
 
-            while(!openSet.empty()){
+            while(!openSet.empty() && reachable){
                 node current=openSet.top();
                 if(current==goal){
 
                     //RCLCPP_INFO(this->get_logger(), "found goal");
                     while(previous.count(current)>0){
-                        result.push_back(current);
+                        result.insert(result.begin(),current);
                         current=previous[current];
                     }
                     //std::string logMessage = "returning with " + std::to_string(result.size()) + " path nodes";
@@ -205,6 +210,8 @@ class MotionPlannerNode : public rclcpp::Node
                         previous[n]=current;
                         n.cost=score;
                         n.dist=pow(dist(n,goal),2);
+                        if(dist(n,goal)>dist(start,goal)*2)//if we are exploring nodes way far out, terminate to stop infinite looping
+                            reachable=false;//this might trigger early if goal and start are close
                         if(checked.count(n)==0){
                             checked.insert(n);
                             openSet.push(n);
@@ -276,12 +283,52 @@ class MotionPlannerNode : public rclcpp::Node
             return result;
         }
 
-        std::queue<gpose> calculatePath(){//best first search at the moment, if it turns out to be too slow the algo will be changed
-            std::queue<gpose> result;
+        float start2EndError(std::vector<node> nodes){
+            //this function gets the mean square error between the actual path and a straight line from the first to the last node
+            float result=0,dx,dy,dz;
+            dx=nodes.front().x-nodes.back().x;
+            dy=nodes.front().y-nodes.back().y;
+            dz=nodes.front().z-nodes.back().z;
+            int i=0;
+            for(node n: nodes){
+                node temp;
+                temp.x=nodes.front().x+dx*i/nodes.size();
+                temp.y=nodes.front().y+dy*i/nodes.size();
+                temp.z=nodes.front().z+dz*i/nodes.size();
+                result+=dist(n,temp);
+                i++;
+            }
+            return result/nodes.size();
+        }
+
+        std::vector<gpose> calculatePath(){//best first search at the moment, if it turns out to be too slow the algo will be changed
+            std::vector<gpose> result;
             if(searching || loading)return result;
             auto accessor=costmap.createAccessor();
             searching=true;
             std::vector<node> path=aStarSearch();
+            if(path.size()>0){
+            size_t last,current=0;
+            float threshold=0.25;
+
+            RCLCPP_INFO(this->get_logger(), "starting node -> pose");
+            while(current<path.size()-1){
+                last=current+1;
+                while(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last))<threshold && last<path.size()-1){
+                    std::string logMessage = "Error :" + std::to_string(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last)));
+                    RCLCPP_INFO(this->get_logger(), logMessage.c_str());
+                    last++;
+                }
+                current=last;
+                gpose temp;
+                temp.copy_orientation=false;
+                temp.pose.position.x=path[current].x;
+                temp.pose.position.y=path[current].y;
+                temp.pose.position.z=-path[current].z;
+                result.push_back(temp);
+                }
+            }
+
             for(node n: path){
                 accessor.setValue(costmap.posToCoord(n.x,n.y,n.z), 2.0);
             }
