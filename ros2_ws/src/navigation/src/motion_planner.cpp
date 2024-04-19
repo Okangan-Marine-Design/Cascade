@@ -37,22 +37,52 @@ class MotionPlannerNode : public rclcpp::Node
             //set end goal pose
             currentEndPoseMsg=msg;
             haveGoal=true;
+            newGoal=true;
         }
         void current_pose_callback(geometry_msgs::msg::PoseStamped msg){
             //set current pose
             currentPoseMsg=msg;
-            if(haveGoal && checkNewObstacles())//check if there are any new obstacles from curr pose to current goal
-                calculatePath();
+            if(haveGoal && (checkNewObstacles() || newGoal)){//check if there are any new obstacles from curr pose to current goal
+                newGoal=false;
+                goalQueue=calculatePath();
+                publishNextGoal();
+            }
+            publishVoxelGrid();
         }
 
         void goal_status_callback(cascade_msgs::msg::Status msg){
             //receives success, in progress, or failure from the motor cortex
             //if successfully reached its goal, publish next goal pose in the queue
+            if(msg.status==cascade_msgs::msg::Status::SUCCESS){
+                if(publishNextGoal()){
+                    
+                }
+                else{
+                    //publish success status from motion planner to navigator
+                }
+            }
+
+
         }
 
         void costmap_callback(cascade_msgs::msg::VoxelGrid msg){
             replaceCostmap(msg);
-            calculatePath();
+            if(haveGoal && (checkNewObstacles() || newGoal)){//check if there are any new obstacles from curr pose to current goal
+                newGoal=false;
+                goalQueue=calculatePath();
+                publishNextGoal();
+            }
+        }
+
+        bool publishNextGoal(){
+            if(!goalQueue.empty()){
+                currentGoalPose=goalQueue.front();
+                goalQueue.pop();
+                goal_pose_publisher->publish(currentGoalPose);
+                return true;
+            }
+            goal_pose_publisher->publish(currentGoalPose);
+            return false;
         }
 
         bool replaceCostmap(cascade_msgs::msg::VoxelGrid msg){
@@ -317,15 +347,15 @@ class MotionPlannerNode : public rclcpp::Node
     }
     return result;
 }
-        std::vector<gpose> calculatePath(){//best first search at the moment, if it turns out to be too slow the algo will be changed
-            std::vector<gpose> result;
+        std::queue<gpose> calculatePath(){//best first search at the moment, if it turns out to be too slow the algo will be changed
+            std::queue<gpose> result;
             if(searching || loading)return result;
             auto accessor=costmap.createAccessor();
             searching=true;
             std::vector<node> path=aStarSearch();
             if(path.size()>0){
             size_t last,current=0;
-            float threshold=0.25;
+            float threshold=0.15;
 
             //RCLCPP_INFO(this->get_logger(), "starting node -> pose");
             while(current<path.size()-1){
@@ -342,7 +372,7 @@ class MotionPlannerNode : public rclcpp::Node
                 temp.pose.position.x=path[current].x;
                 temp.pose.position.y=path[current].y;
                 temp.pose.position.z=-path[current].z;
-                result.push_back(temp);
+                result.push(temp);
                 }
             }
 
@@ -356,8 +386,10 @@ class MotionPlannerNode : public rclcpp::Node
             return result;
         }
 
-        bool loading=false, haveGoal=false, searching=false;
+        bool loading=false, haveGoal=false, searching=false, newGoal=true;
         Bonxai::VoxelGrid<float> costmap;
+        std::queue<gpose> goalQueue;
+        gpose currentGoalPose;
         rclcpp::Publisher<cascade_msgs::msg::VoxelGrid>::SharedPtr gridPublisher;
         geometry_msgs::msg::PoseStamped currentPoseMsg;
         cascade_msgs::msg::GoalPose currentEndPoseMsg;

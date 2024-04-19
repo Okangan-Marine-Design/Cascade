@@ -26,8 +26,8 @@ class MotorCortexNode : public rclcpp::Node
         MotorCortexNode() 
         : Node("motor_cortex_node"){ 
 
-            goal_pose_subscription_ = this->create_subscription<cascade_msgs::msg::GoalPose>("/current_goal_pose", 10, std::bind(&MotorCortexNode::goal_pose_callback, this, _1));
-            current_pose_subscription_ = this->create_subscription<geometry_msgs::msg::PoseStamped>("/pose", 10, std::bind(&MotorCortexNode::current_pose_callback, this, _1));
+            goal_pose_subscription = this->create_subscription<cascade_msgs::msg::GoalPose>("/current_goal_pose", 10, std::bind(&MotorCortexNode::goal_pose_callback, this, _1));
+            current_pose_subscription = this->create_subscription<geometry_msgs::msg::PoseStamped>("/pose", 10, std::bind(&MotorCortexNode::current_pose_callback, this, _1));
 
             //adds all publishers to a map
             
@@ -37,8 +37,8 @@ class MotorCortexNode : public rclcpp::Node
             pidPublisherMap.insert(std::pair{"surge", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/surge/target", 10)});
             pidPublisherMap.insert(std::pair{"sway", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/sway/target", 10)});
             pidPublisherMap.insert(std::pair{"heave", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/heave/target", 10)});
-            status_publisher_ = this->create_publisher<cascade_msgs::msg::Status>("/current_goal_status", 10);
-            timer_ = this->create_wall_timer(
+            status_publisher = this->create_publisher<cascade_msgs::msg::Status>("/current_goal_status", 10);
+            timer = this->create_wall_timer(
                 50ms, std::bind(&MotorCortexNode::updateSetPoints, this));
 
         }
@@ -57,11 +57,11 @@ class MotorCortexNode : public rclcpp::Node
             //if more than 1.5 meters, 1.5m/s
             //if between 0.1 and 1.5 meters, want to move at same speed as distance, ex. 1 meter away = 1m/s goal speed
             //if less than 0.1 dont need to move, we consider this as at the goal
-            if(abs(dist)>3){
+            if(abs(dist)>1){
                 holdMode=false; // TODO this is kind of jank, find a better place to turn off yaw holdMode
-                return 0.75*dist/abs(dist);//this makes sure that the speed returned is in the correct direction
+                return 0.5*dist/abs(dist);//this makes sure that the speed returned is in the correct direction
             }
-            if(abs(dist)>=0.1 && abs(dist)<=3)return fmin(dist/4,0.3);
+            if(abs(dist)>=0.1 && abs(dist)<=1)return fmin(dist/6,0.3);
             //TODO: turn these values into adjustable parameters
             return dist/8;//returns very low speed if very close to goal (dist<0.1)
         }
@@ -143,8 +143,8 @@ class MotorCortexNode : public rclcpp::Node
                   roll=0;
             
             geometry_msgs::msg::Vector3 relative_translation = calculateRelativeTranslation(currentPoseMsg.pose,currentGoalPoseMsg.pose);
-            float trig_dist = sqrt(relative_translation.x*relative_translation.x + relative_translation.y*relative_translation.y);
-            if(trig_dist<3){//TODO make this a parameter
+            float trig_dist = sqrt(relative_translation.x*relative_translation.x + relative_translation.y*relative_translation.y + relative_translation.z*relative_translation.z);
+            if(trig_dist<1){//TODO make this a parameter
                 //if  very close to goal, dont try to rotate
                 if(!holdMode){
                     holdYaw=yaw_from_pose(currentPoseMsg.pose);
@@ -184,16 +184,18 @@ class MotorCortexNode : public rclcpp::Node
             auto message = cascade_msgs::msg::Status();
             //what will status messages mean?
             //what info do we need to pass to the motion planner node?
-            //0=moving, 1=reached destination, -1=failed?
-            message.status = 0;
-            status_publisher_->publish(message);
+            //0=moving, 1=reached destination, 2=failed?
+            if(trig_dist<0.25)
+                message.status = cascade_msgs::msg::Status::SUCCESS;
+            else message.status = cascade_msgs::msg::Status::ONGOING;
+            status_publisher->publish(message);
         }
         cascade_msgs::msg::GoalPose currentGoalPoseMsg; 
         geometry_msgs::msg::PoseStamped currentPoseMsg;
-        rclcpp::Subscription<cascade_msgs::msg::GoalPose>::SharedPtr  goal_pose_subscription_;
-        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  current_pose_subscription_;
-        rclcpp::Publisher<cascade_msgs::msg::Status>::SharedPtr status_publisher_;
-        rclcpp::TimerBase::SharedPtr timer_;
+        rclcpp::Subscription<cascade_msgs::msg::GoalPose>::SharedPtr  goal_pose_subscription;
+        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  current_pose_subscription;
+        rclcpp::Publisher<cascade_msgs::msg::Status>::SharedPtr status_publisher;
+        rclcpp::TimerBase::SharedPtr timer;
         std::map<std::string, rclcpp::Publisher<cascade_msgs::msg::SensorReading>::SharedPtr> pidPublisherMap;
         float holdYaw=0;
         bool holdMode=false;
