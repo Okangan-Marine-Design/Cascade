@@ -1,8 +1,4 @@
-#include <chrono>
-#include <memory>
 #include <string>
-#include <iostream>
-#include <fstream>
 #include "rclcpp/rclcpp.hpp"
 #include "cascade_msgs/msg/movement_command.hpp"
 #include "cascade_msgs/msg/status.hpp"
@@ -12,8 +8,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "bonxai/bonxai.hpp"
 #include "bonxai/serialization.hpp"
-#include <queue>
-#include <unordered_map>
+#include <tf2/LinearMath/Vector3.h>
 
 using std::placeholders::_1;
 typedef cascade_msgs::msg::GoalPose gpose;
@@ -283,24 +278,45 @@ class MotionPlannerNode : public rclcpp::Node
             return result;
         }
 
-        float start2EndError(std::vector<node> nodes){
-            //this function gets the mean square error between the actual path and a straight line from the first to the last node
-            float result=0,dx,dy,dz;
-            dx=nodes.front().x-nodes.back().x;
-            dy=nodes.front().y-nodes.back().y;
-            dz=nodes.front().z-nodes.back().z;
-            int i=0;
-            for(node n: nodes){
-                node temp;
-                temp.x=nodes.front().x+dx*i/nodes.size();
-                temp.y=nodes.front().y+dy*i/nodes.size();
-                temp.z=nodes.front().z+dz*i/nodes.size();
-                result+=dist(n,temp);
-                i++;
-            }
-            return result/nodes.size();
+        float start2EndError(std::vector<node> nodes) {
+    float result = 0;
+    if (nodes.size() < 2) {
+        return result; // Not enough nodes to calculate error
+    }
+
+    tf2::Vector3 line_point1(nodes.front().x, nodes.front().y, nodes.front().z);
+    tf2::Vector3 line_point2(nodes.back().x, nodes.back().y, nodes.back().z);
+    
+    for (const node& n : nodes) {
+        tf2::Vector3 point(n.x, n.y, n.z);
+        tf2::Vector3 line_direction = line_point2 - line_point1;
+
+        // Calculate the vector from one of the points on the line to the separate point
+        tf2::Vector3 vector_to_point = point - line_point1;
+
+        // Calculate the squared magnitude of the direction vector
+        double mag_squared = line_direction.length2();
+        if (mag_squared == 0) {
+            continue; // Avoid division by zero
         }
 
+        // Calculate the dot product
+        double dot_product = vector_to_point.dot(line_direction);
+
+        // Calculate the projection of vector_to_point onto the direction vector of the line
+        tf2::Vector3 projection = (dot_product / mag_squared) * line_direction;
+
+        // Calculate the vector from the original point to the projected point
+        tf2::Vector3 distance_vector = point - (line_point1 + projection);
+
+        // Calculate the magnitude of the distance vector
+        double distance = distance_vector.length();
+        if (!std::isnan(distance)) {
+            result += distance;
+        }
+    }
+    return result;
+}
         std::vector<gpose> calculatePath(){//best first search at the moment, if it turns out to be too slow the algo will be changed
             std::vector<gpose> result;
             if(searching || loading)return result;
@@ -311,15 +327,16 @@ class MotionPlannerNode : public rclcpp::Node
             size_t last,current=0;
             float threshold=0.25;
 
-            RCLCPP_INFO(this->get_logger(), "starting node -> pose");
+            //RCLCPP_INFO(this->get_logger(), "starting node -> pose");
             while(current<path.size()-1){
                 last=current+1;
                 while(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last))<threshold && last<path.size()-1){
-                    std::string logMessage = "Error :" + std::to_string(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last)));
-                    RCLCPP_INFO(this->get_logger(), logMessage.c_str());
                     last++;
                 }
+                //std::string logMessage = "Error :" + std::to_string(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last)));
+                //RCLCPP_INFO(this->get_logger(), logMessage.c_str());
                 current=last;
+                accessor.setValue(costmap.posToCoord(path[current].x,path[current].y,path[current].z), 3.0);
                 gpose temp;
                 temp.copy_orientation=false;
                 temp.pose.position.x=path[current].x;
@@ -330,7 +347,7 @@ class MotionPlannerNode : public rclcpp::Node
             }
 
             for(node n: path){
-                accessor.setValue(costmap.posToCoord(n.x,n.y,n.z), 2.0);
+                accessor.setCellOn(costmap.posToCoord(n.x,n.y,n.z), 2.0);
             }
             //insert the path nodes into the costmap and publish under /path_grid
             publishVoxelGrid();
