@@ -44,45 +44,29 @@ class MotionPlannerNode : public rclcpp::Node
             currentPoseMsg=msg;
             if(haveGoal && (checkNewObstacles() || newGoal)){//check if there are any new obstacles from curr pose to current goal
                 newGoal=false;
-                goalQueue=calculatePath();
-                publishNextGoal();
+                currentGoalPose=calculatePath();
+                goal_pose_publisher->publish(currentGoalPose);
+
             }
-            publishVoxelGrid();
+            //publishVoxelGrid();
+            //figure out why the calculatePath() function kind of freezes now
         }
 
         void goal_status_callback(cascade_msgs::msg::Status msg){
             //receives success, in progress, or failure from the motor cortex
             //if successfully reached its goal, publish next goal pose in the queue
             if(msg.status==cascade_msgs::msg::Status::SUCCESS){
-                if(publishNextGoal()){
-                    
-                }
-                else{
-                    //publish success status from motion planner to navigator
-                }
+            
             }
-
-
         }
 
         void costmap_callback(cascade_msgs::msg::VoxelGrid msg){
             replaceCostmap(msg);
             if(haveGoal && (checkNewObstacles() || newGoal)){//check if there are any new obstacles from curr pose to current goal
                 newGoal=false;
-                goalQueue=calculatePath();
-                publishNextGoal();
-            }
-        }
-
-        bool publishNextGoal(){
-            if(!goalQueue.empty()){
-                currentGoalPose=goalQueue.front();
-                goalQueue.pop();
+                currentGoalPose=calculatePath();
                 goal_pose_publisher->publish(currentGoalPose);
-                return true;
             }
-            goal_pose_publisher->publish(currentGoalPose);
-            return false;
         }
 
         bool replaceCostmap(cascade_msgs::msg::VoxelGrid msg){
@@ -177,9 +161,9 @@ class MotionPlannerNode : public rclcpp::Node
             goal.y = currentEndPoseMsg.pose.position.y;
             goal.z = -currentEndPoseMsg.pose.position.z;//why does this need to be negative i have no clue
 
-            Bonxai::CoordT coord = costmap.posToCoord(goal.x, goal.y, goal.z);
-            float* goal_value = accessor.value( coord );
-            if(goal_value!=nullptr)return result;//if goal is inside an obstacle dont even try
+            float *goal_value = accessor.value(costmap.posToCoord(goal.x, goal.y, goal.z)), 
+                    *start_value = accessor.value(costmap.posToCoord(start.x, start.y, start.z));
+            if(goal_value!=nullptr || start_value!=nullptr)return result;//if goal is inside an obstacle dont even try
 
             std::vector<node> surrounding;
             std::unordered_set<node, nodeHash> checked;
@@ -347,38 +331,44 @@ class MotionPlannerNode : public rclcpp::Node
     }
     return result;
 }
-        std::queue<gpose> calculatePath(){//best first search at the moment, if it turns out to be too slow the algo will be changed
-            std::queue<gpose> result;
+        gpose calculatePath(){//best first search at the moment, if it turns out to be too slow the algo will be changed
+            gpose result=gpose();
             if(searching || loading)return result;
             auto accessor=costmap.createAccessor();
             searching=true;
             std::vector<node> path=aStarSearch();
-            if(path.size()>0){
-            size_t last,current=0;
-            float threshold=0.15;
+            if(path.size()>1){
+                size_t last=0,current=0;
+                float threshold=0.05;
 
-            //RCLCPP_INFO(this->get_logger(), "starting node -> pose");
-            while(current<path.size()-1){
-                last=current+1;
-                while(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last))<threshold && last<path.size()-1){
+                //RCLCPP_INFO(this->get_logger(), "starting node -> pose");
+                while(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last+1))<threshold && last<path.size()-1){
                     last++;
                 }
                 //std::string logMessage = "Error :" + std::to_string(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last)));
                 //RCLCPP_INFO(this->get_logger(), logMessage.c_str());
                 current=last;
                 accessor.setValue(costmap.posToCoord(path[current].x,path[current].y,path[current].z), 3.0);
-                gpose temp;
+                gpose temp=gpose();
                 temp.copy_orientation=false;
                 temp.pose.position.x=path[current].x;
                 temp.pose.position.y=path[current].y;
                 temp.pose.position.z=-path[current].z;
-                result.push(temp);
-                }
+                result=temp;
             }
-
+            else if(path.size()==1){
+                result=currentEndPoseMsg;
+            }
+            else{
+                gpose temp=gpose();
+                temp.copy_orientation=true;
+                temp.pose=currentPoseMsg.pose;//if already at goal or failure to calculate path, then just stay where it is
+                result=temp;
+            }
             for(node n: path){
                 accessor.setCellOn(costmap.posToCoord(n.x,n.y,n.z), 2.0);
             }
+            
             //insert the path nodes into the costmap and publish under /path_grid
             publishVoxelGrid();
             clear_path_nodes(path);
@@ -388,7 +378,6 @@ class MotionPlannerNode : public rclcpp::Node
 
         bool loading=false, haveGoal=false, searching=false, newGoal=true;
         Bonxai::VoxelGrid<float> costmap;
-        std::queue<gpose> goalQueue;
         gpose currentGoalPose;
         rclcpp::Publisher<cascade_msgs::msg::VoxelGrid>::SharedPtr gridPublisher;
         geometry_msgs::msg::PoseStamped currentPoseMsg;

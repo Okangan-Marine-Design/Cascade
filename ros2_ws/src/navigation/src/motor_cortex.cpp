@@ -39,7 +39,7 @@ class MotorCortexNode : public rclcpp::Node
             pidPublisherMap.insert(std::pair{"heave", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/heave/target", 10)});
             status_publisher = this->create_publisher<cascade_msgs::msg::Status>("/current_goal_status", 10);
             timer = this->create_wall_timer(
-                50ms, std::bind(&MotorCortexNode::updateSetPoints, this));
+                10ms, std::bind(&MotorCortexNode::updateSetPoints, this));
 
         }
     private:
@@ -57,11 +57,11 @@ class MotorCortexNode : public rclcpp::Node
             //if more than 1.5 meters, 1.5m/s
             //if between 0.1 and 1.5 meters, want to move at same speed as distance, ex. 1 meter away = 1m/s goal speed
             //if less than 0.1 dont need to move, we consider this as at the goal
-            if(abs(dist)>1){
+            if(abs(dist)>3){
                 holdMode=false; // TODO this is kind of jank, find a better place to turn off yaw holdMode
-                return 0.5*dist/abs(dist);//this makes sure that the speed returned is in the correct direction
+                return 0.75*dist/abs(dist);//this makes sure that the speed returned is in the correct direction
             }
-            if(abs(dist)>=0.1 && abs(dist)<=1)return fmin(dist/6,0.3);
+            if(abs(dist)>=0.1 && abs(dist)<=3)return fmin(dist/4,0.3);
             //TODO: turn these values into adjustable parameters
             return dist/8;//returns very low speed if very close to goal (dist<0.1)
         }
@@ -144,7 +144,7 @@ class MotorCortexNode : public rclcpp::Node
             
             geometry_msgs::msg::Vector3 relative_translation = calculateRelativeTranslation(currentPoseMsg.pose,currentGoalPoseMsg.pose);
             float trig_dist = sqrt(relative_translation.x*relative_translation.x + relative_translation.y*relative_translation.y + relative_translation.z*relative_translation.z);
-            if(trig_dist<1){//TODO make this a parameter
+            if(trig_dist<0.5){//TODO make this a parameter
                 //if  very close to goal, dont try to rotate
                 if(!holdMode){
                     holdYaw=yaw_from_pose(currentPoseMsg.pose);
@@ -185,9 +185,10 @@ class MotorCortexNode : public rclcpp::Node
             //what will status messages mean?
             //what info do we need to pass to the motion planner node?
             //0=moving, 1=reached destination, 2=failed?
-            if(trig_dist<0.25)
+            if(trig_dist<0.5)
                 message.status = cascade_msgs::msg::Status::SUCCESS;
-            else message.status = cascade_msgs::msg::Status::ONGOING;
+            else
+                message.status = cascade_msgs::msg::Status::ONGOING;
             status_publisher->publish(message);
         }
         cascade_msgs::msg::GoalPose currentGoalPoseMsg; 

@@ -50,7 +50,16 @@ class PIDNode(Node):
         elif (actual_msg.data - self.prevMsg.data > 300.0):
             self.wrap-=1
         
-        error=target_msg.data-(actual_msg.data+self.wrap*360.0)
+        target = target_msg.data
+        actual = (actual_msg.data+self.wrap*360.0)
+        
+        error=target-actual
+
+        if(abs(error+360)<abs(error)):
+            error+=360
+
+        if(abs(error-360)<abs(error)):
+            error-=360
 
         if(self.lastMsgTime>0):
             dt=(self.get_clock().now().nanoseconds-self.lastMsgTime)/1000000000.0
