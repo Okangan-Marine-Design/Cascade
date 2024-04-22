@@ -27,6 +27,9 @@ add_executable(visualizer
 add_executable(serialization_test
     src/serialization_test.cpp)
 
+add_executable(costmap_node
+    src/cost_map_node.cpp)
+
 target_include_directories(serialization_test PUBLIC include)
 
 ament_target_dependencies(mapping_node rclcpp sensor_msgs geometry_msgs cv_bridge message_filters tf2 tf2_ros image_transport tf2_geometry_msgs OpenCV cascade_msgs)
@@ -36,11 +39,15 @@ ament_target_dependencies(visualizer rclcpp cascade_msgs glfw3 OpenGL tf2 tf2_ge
 target_link_libraries(visualizer ${OPENGL_LIBRARIES} glfw)
 target_include_directories(visualizer PUBLIC include)
 
+ament_target_dependencies(costmap_node rclcpp sensor_msgs geometry_msgs cv_bridge message_filters tf2 tf2_ros image_transport tf2_geometry_msgs OpenCV cascade_msgs)
+target_include_directories(costmap_node PUBLIC include)
+
 
 install(TARGETS
   mapping_node
   visualizer
   serialization_test
+  costmap_node
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

@@ -37,24 +37,24 @@ heave_pid_controller:
 x_translation_pid_controller:
   ros__parameters:
     kI: 0.0
-    kP: 0.3
-    kD: 1.5
+    kP: 0.8
+    kD: 2.5
     bias: 0.0
-    max: 1.0
+    max: 1.5
 y_translation_pid_controller:
   ros__parameters:
     kI: 0.0
-    kP: 0.3
-    kD: 1.5
+    kP: 0.8
+    kD: 2.5
     bias: 0.0
-    max: 1.0
+    max: 1.5
 z_translation_pid_controller:
   ros__parameters:
     kI: 0.0
-    kP: 0.3
-    kD: 1.5
+    kP: 0.8
+    kD: 2.5
     bias: 0.0
-    max: 1.0
+    max: 1.5
 
 
 

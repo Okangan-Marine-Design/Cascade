@@ -87,7 +87,6 @@ bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
     for (int u = 0; u < w; ++u) {
         for (int v = 0; v < h; ++v) {
             float x = depth_to_meters(depth_img.at<float>(v, u)); //x is depth  
-            float depth=x;
             if (x > 0 && x < MAX_DIST) {  
                 float y = -x * ((u - cx) * fx_inv); // Calculate real world projection of each pixel
                 float z = x * ((v - cy) * fy_inv); // z is vertical, y is horizontal

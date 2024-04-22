@@ -90,7 +90,7 @@
         <visual name="wall_visual">
           <geometry>
             <box>
-              <size>10 1 10</size>
+              <size>5 1 5</size>
             </box>
           </geometry>
           <material>

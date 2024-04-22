@@ -26,7 +26,7 @@ class MotionPlannerNode : public rclcpp::Node
         status_publisher = this->create_publisher<cascade_msgs::msg::Status>("/end_goal_status", 10);
 
         status_subscription = this->create_subscription<cascade_msgs::msg::Status>("/current_goal_status", 10, std::bind(&MotionPlannerNode::goal_status_callback, this, _1));
-        costmap_subscription = this->create_subscription<cascade_msgs::msg::VoxelGrid>("/voxel_grid", 10, std::bind(&MotionPlannerNode::costmap_callback, this, _1));
+        costmap_subscription = this->create_subscription<cascade_msgs::msg::VoxelGrid>("/costmap_grid", 10, std::bind(&MotionPlannerNode::costmap_callback, this, _1));
 
         current_pose_subscription = this->create_subscription<geometry_msgs::msg::PoseStamped>("/pose", 10, std::bind(&MotionPlannerNode::current_pose_callback, this, _1));
 
@@ -146,6 +146,18 @@ class MotionPlannerNode : public rclcpp::Node
             gridPublisher->publish(gridMsg);
         }
 
+        bool isValidNode(float* pointer){
+            if(pointer==nullptr)return true;
+            if(*pointer==-1.0 || *pointer==0.0)return true;
+            return false;
+        }
+
+        bool isInflatedNode(float* pointer){
+            if(pointer==nullptr)return false;
+            if(*pointer==-1.0)return true;
+            return false;
+        }
+
         std::vector<node> aStarSearch(){
             std::vector<node> result;
             auto accessor=costmap.createAccessor();
@@ -163,14 +175,14 @@ class MotionPlannerNode : public rclcpp::Node
 
             float *goal_value = accessor.value(costmap.posToCoord(goal.x, goal.y, goal.z)), 
                     *start_value = accessor.value(costmap.posToCoord(start.x, start.y, start.z));
-            if(goal_value!=nullptr || start_value!=nullptr)return result;//if goal is inside an obstacle dont even try
+            if(!isValidNode(goal_value) || !isValidNode(start_value))return result;//if goal is inside an obstacle dont even try
 
             std::vector<node> surrounding;
             std::unordered_set<node, nodeHash> checked;
             std::unordered_map<node, node, nodeHash> previous;
             std::priority_queue<node, std::vector<node>, nodeCompare> openSet;
             start.cost=0;
-            start.dist=pow(dist(start,goal),2);
+            start.dist=dist(start,goal);
             openSet.push(start);
             checked.insert(start);
             bool reachable=true;
@@ -200,10 +212,7 @@ class MotionPlannerNode : public rclcpp::Node
                             tempNode.z=current.z+z*costmap.resolution*0.75;
                             Bonxai::CoordT coord = costmap.posToCoord(tempNode.x, tempNode.y, tempNode.z);
                             float* value_ptr = accessor.value( coord );
-                            bool valid=false;
-                            if(value_ptr==nullptr)valid=true;
-                            else if(*value_ptr==0.0)valid=true;
-                            if(valid){
+                            if(isValidNode(value_ptr)){
                                 if(checked.count(tempNode)>0){
                                     tempNode=*checked.find(tempNode);
                                 }else
@@ -215,10 +224,13 @@ class MotionPlannerNode : public rclcpp::Node
                 }
                 for(node n: surrounding){
                     float score=current.cost+dist(current,n);
+                    float* value_ptr = accessor.value(costmap.posToCoord(n.x, n.y, n.z));
+                    if(isInflatedNode(value_ptr))
+                        score+=100*(abs(*value_ptr))*dist(current,n);//to discourage using inflated nodes, but allowing it if really needed
                     if(score<n.cost){
                         previous[n]=current;
                         n.cost=score;
-                        n.dist=pow(dist(n,goal),2);
+                        n.dist=dist(n,goal)*5;
                         if(dist(n,goal)>dist(start,goal)*2)//if we are exploring nodes way far out, terminate to stop infinite looping
                             reachable=false;//this might trigger early if goal and start are close
                         if(checked.count(n)==0){
@@ -339,7 +351,7 @@ class MotionPlannerNode : public rclcpp::Node
             std::vector<node> path=aStarSearch();
             if(path.size()>1){
                 size_t last=0,current=0;
-                float threshold=0.05;
+                float threshold=0.25;
 
                 //RCLCPP_INFO(this->get_logger(), "starting node -> pose");
                 while(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last+1))<threshold && last<path.size()-1){
