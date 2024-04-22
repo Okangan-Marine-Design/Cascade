@@ -34,9 +34,10 @@ class MotorCortexNode : public rclcpp::Node
             pidPublisherMap.insert(std::pair{"yaw", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/yaw/target", 10)});
             pidPublisherMap.insert(std::pair{"pitch", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/pitch/target", 10)});
             pidPublisherMap.insert(std::pair{"roll", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/roll/target", 10)});
-            pidPublisherMap.insert(std::pair{"surge", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/surge/target", 10)});
-            pidPublisherMap.insert(std::pair{"sway", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/sway/target", 10)});
-            pidPublisherMap.insert(std::pair{"heave", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/heave/target", 10)});
+            pidPublisherMap.insert(std::pair{"zero_translation", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/translation/target", 10)});
+            pidPublisherMap.insert(std::pair{"x_translation", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/x_translation/actual", 10)});
+            pidPublisherMap.insert(std::pair{"y_translation", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/y_translation/actual", 10)});
+            pidPublisherMap.insert(std::pair{"z_translation", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/z_translation/actual", 10)});
             status_publisher = this->create_publisher<cascade_msgs::msg::Status>("/current_goal_status", 10);
             timer = this->create_wall_timer(
                 10ms, std::bind(&MotorCortexNode::updateSetPoints, this));
@@ -51,8 +52,7 @@ class MotorCortexNode : public rclcpp::Node
         void current_pose_callback(geometry_msgs::msg::PoseStamped msg){
             currentPoseMsg=msg;
         }
-        float calculateSpeedFromDistance(float dist){
-            //implement
+        float calculateSpeedFromDistance(float dist){//deprecated, now use cascading PID instead
             //how fast do we want to be going based on distance from goal
             //if more than 1.5 meters, 1.5m/s
             //if between 0.1 and 1.5 meters, want to move at same speed as distance, ex. 1 meter away = 1m/s goal speed
@@ -65,6 +65,7 @@ class MotorCortexNode : public rclcpp::Node
             //TODO: turn these values into adjustable parameters
             return dist/8;//returns very low speed if very close to goal (dist<0.1)
         }
+
         float yaw_from_pose(const geometry_msgs::msg::Pose& pose) {
             float x = pose.orientation.x;
             float y = pose.orientation.y;
@@ -133,9 +134,10 @@ class MotorCortexNode : public rclcpp::Node
                 pitchMsg=cascade_msgs::msg::SensorReading(),
                 yawMsg=cascade_msgs::msg::SensorReading(),
                 rollMsg=cascade_msgs::msg::SensorReading(),
-                surgeMsg=cascade_msgs::msg::SensorReading(),
-                heaveMsg=cascade_msgs::msg::SensorReading(),
-                swayMsg=cascade_msgs::msg::SensorReading();
+                xMsg=cascade_msgs::msg::SensorReading(),
+                yMsg=cascade_msgs::msg::SensorReading(),
+                zMsg=cascade_msgs::msg::SensorReading(),
+                zeroMsg=cascade_msgs::msg::SensorReading();
 
             //calculating required rotation 
             float yaw=0,
@@ -144,7 +146,7 @@ class MotorCortexNode : public rclcpp::Node
             
             geometry_msgs::msg::Vector3 relative_translation = calculateRelativeTranslation(currentPoseMsg.pose,currentGoalPoseMsg.pose);
             float trig_dist = sqrt(relative_translation.x*relative_translation.x + relative_translation.y*relative_translation.y + relative_translation.z*relative_translation.z);
-            if(trig_dist<0.5){//TODO make this a parameter
+            if(trig_dist<1){//TODO make this a parameter
                 //if  very close to goal, dont try to rotate
                 if(!holdMode){
                     holdYaw=yaw_from_pose(currentPoseMsg.pose);
@@ -155,36 +157,36 @@ class MotorCortexNode : public rclcpp::Node
                 }
                 yaw=holdYaw;
             }
-            else
+            else{
                 yaw=atan2(currentGoalPoseMsg.pose.position.y-currentPoseMsg.pose.position.y,
                         currentGoalPoseMsg.pose.position.x-currentPoseMsg.pose.position.x)*(180/3.1415926);
+                if(trig_dist>1.5)//TODO make this a parameter
+                    holdMode=false;
+            }
+
             pitchMsg.data=pitch;
             yawMsg.data=yaw;
             rollMsg.data=roll;
-            surgeMsg.data=calculateSpeedFromDistance(relative_translation.x);
-            heaveMsg.data=calculateSpeedFromDistance(relative_translation.z);
-            swayMsg.data=calculateSpeedFromDistance(relative_translation.y);
+            xMsg.data=-relative_translation.x;
+            yMsg.data=-relative_translation.y;
+            zMsg.data=-relative_translation.z;
             pitchMsg.header.stamp=this->now();
             yawMsg.header.stamp=this->now();
             rollMsg.header.stamp=this->now();
-            surgeMsg.header.stamp=this->now();
-            swayMsg.header.stamp=this->now();
-            heaveMsg.header.stamp=this->now();
+            xMsg.header.stamp=this->now();
+            yMsg.header.stamp=this->now();
+            zMsg.header.stamp=this->now();
+            zeroMsg.header.stamp=this->now();
 
             pidPublisherMap["pitch"]->publish(pitchMsg);
             pidPublisherMap["yaw"]->publish(yawMsg);
             pidPublisherMap["roll"]->publish(rollMsg);
-            pidPublisherMap["surge"]->publish(surgeMsg);
-            pidPublisherMap["sway"]->publish(swayMsg);
-            pidPublisherMap["heave"]->publish(heaveMsg);
-
-            //how will roll pid be handled? always 0? probably for now yes
-            //now figure out how to tranform the pose
+            pidPublisherMap["x_translation"]->publish(xMsg);
+            pidPublisherMap["y_translation"]->publish(yMsg);
+            pidPublisherMap["z_translation"]->publish(zMsg);
+            pidPublisherMap["zero_translation"]->publish(zeroMsg);
 
             auto message = cascade_msgs::msg::Status();
-            //what will status messages mean?
-            //what info do we need to pass to the motion planner node?
-            //0=moving, 1=reached destination, 2=failed?
             if(trig_dist<0.5)
                 message.status = cascade_msgs::msg::Status::SUCCESS;
             else

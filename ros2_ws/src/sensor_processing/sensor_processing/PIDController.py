@@ -10,10 +10,12 @@ class PIDNode(Node):
         self.declare_parameter('kD', 0.0)
         self.declare_parameter('kI', 0.0)
         self.declare_parameter('kP', 0.0)
+        self.declare_parameter('max', 0.0)
         self.kD=0.1
         self.kI=0.01
         self.kP=1.0
         self.bias=0.0
+        self.max=0.0
         self.paramsRead=False
         self.saturation_limit=100
         self.I=0.0
@@ -40,6 +42,7 @@ class PIDNode(Node):
              self.kP = self.get_parameter('kP').get_parameter_value().double_value
              self.kD = self.get_parameter('kD').get_parameter_value().double_value
              self.bias = self.get_parameter('bias').get_parameter_value().double_value
+             self.max = self.get_parameter('max').get_parameter_value().double_value
              self.paramsRead=True
 
         msg=SensorReading()
@@ -60,7 +63,7 @@ class PIDNode(Node):
 
         if(abs(error-360)<abs(error)):
             error-=360
-
+        
         if(self.lastMsgTime>0):
             dt=(self.get_clock().now().nanoseconds-self.lastMsgTime)/1000000000.0
             #dt is time delta from last message in seconds 
@@ -69,7 +72,12 @@ class PIDNode(Node):
             self.I = max(min(self.I, self.saturation_limit), -self.saturation_limit)
             #TODO: turn saturation into a ros2 parameter
             D=self.kD*(error-self.lastError)/dt
-            msg.data=P+self.I+D
+            if(abs(self.max)>0):
+                msg.data=min(abs(P+self.I+D),abs(self.max))
+                if(P+self.I+D<0):
+                    msg.data*=-1
+            else:
+                msg.data=P+self.I+D
         else:
             msg.data=0.0
 

@@ -149,6 +149,39 @@ def generate_launch_description():
         ),
         Node(
             package='sensor_processing',
+            executable='pid',
+            name='x_translation_pid_controller',
+            remappings=[
+                ('/PID/XXX/target', '/PID/translation/target'),#goal translation is always 0 for now, so each translational PID controller has the same target
+                ('/PID/XXX/actual', '/PID/x_translation/actual'),
+                ('/PID_correction/XXX', '/PID/surge/target')#cascading
+            ],
+            parameters=[pid_config]
+        ),
+        Node(
+            package='sensor_processing',
+            executable='pid',
+            name='y_translation_pid_controller',
+            remappings=[
+                ('/PID/XXX/target', '/PID/translation/target'),
+                ('/PID/XXX/actual', '/PID/y_translation/actual'),
+                ('/PID_correction/XXX', '/PID/sway/target')#cascading
+            ],
+            parameters=[pid_config]
+        ),
+        Node(
+            package='sensor_processing',
+            executable='pid',
+            name='z_translation_pid_controller',
+            remappings=[
+                ('/PID/XXX/target', '/PID/translation/target'),
+                ('/PID/XXX/actual', '/PID/z_translation/actual'),
+                ('/PID_correction/XXX', '/PID/heave/target')#cascading
+            ],
+            parameters=[pid_config]
+        ),
+        Node(
+            package='sensor_processing',
             executable='pid_combiner',
         ),
         Node(
