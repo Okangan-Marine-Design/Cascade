@@ -52,10 +52,11 @@ void publishVoxelGrid(){
     gridPublisher->publish(gridMsg);
 }
 
+
 bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
     auto accessor = grid.createAccessor();
-    if(inserting) return false;//return fail to insert
-    inserting=true;//making sure we dont insert multiple depth scans at once
+    if (inserting) return false; // Return fail to insert
+    inserting = true; // Making sure we don't insert multiple depth scans at once
     cv::Mat depth_img = cv_bridge::toCvCopy(img.image)->image;
     int w = depth_img.cols;
     int h = depth_img.rows;
@@ -86,40 +87,33 @@ bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
     tf2::Matrix3x3 tf_R(tf_current_pose.getRotation());
     for (int u = 0; u < w; ++u) {
         for (int v = 0; v < h; ++v) {
-            float x = depth_to_meters(depth_img.at<float>(v, u)); //x is depth  
+            float depth = depth_img.at<cv::Vec3f>(v, u)[0]; // Extract depth from the first channel
+            int class_id = static_cast<int>(depth_img.at<cv::Vec3f>(v, u)[1]); // Extract class from the second channel
+            float confidence = depth_img.at<cv::Vec3f>(v, u)[2]; // Extract confidence from the third channel
+
+            float x = depth_to_meters(depth);
             if (x > 0 && x < MAX_DIST) {  
                 float y = -x * ((u - cx) * fx_inv); // Calculate real world projection of each pixel
                 float z = x * ((v - cy) * fy_inv); // z is vertical, y is horizontal
 
                 // Apply rotation to the point
-                
                 tf2::Vector3 rotated_point = tf_R * tf2::Vector3(x, y, z);
                 x = rotated_point.x();
                 y = rotated_point.y();
                 z = rotated_point.z();
-                
+
                 // Translate the point according to robot's pose
                 x += img.pose.position.x;
                 y += img.pose.position.y;
                 z -= img.pose.position.z;
 
                 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
-                accessor.setValue(coord, 1.0); // Set voxel value 
+                accessor.setValue(coord, class_id); // Set voxel value to class ID
             }
         }  
     }
-    /*
-    std::ofstream outputFile("map.bx", std::ios::binary);
-    if (!outputFile.is_open()) {
-        std::cerr << "Error: Unable to open file for writing" << std::endl;
-        return false;//return failed to insert into file
-    }
-
-    Bonxai::Serialize(outputFile, grid);
-    outputFile.close();
-    */
     publishVoxelGrid();
-    inserting=false;
+    inserting = false;
     return true;
 }
 

@@ -31,9 +31,13 @@ class DepthLabelerNode(Node):
             self.get_logger().error(f"Failed to convert images: {e}")
             return
 
+
         # Assuming label_image has two channels: class and confidence
         class_image = label_image[:, :, 0]
         confidence_image = label_image[:, :, 1]
+        
+        cv2.imshow('Class Image', class_image)
+        cv2.waitKey(1)  # Add a small delay to allow the image to be displayed
 
         # Create a new image with an extra dimension to store class and confidence
         height, width = depth_image.shape

@@ -61,6 +61,10 @@ if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 // Function to draw a single voxel
 void drawVoxel(float x, float y, float z, float size, float data) {
     float r=0,g=0,b=0,a=1;
+    switch(data){//change class to be integer instead of float
+        case 1.0:
+        break;
+    }
     if(data==1.0){//general obstacle
         r=0.0;
         g=1.0;
@@ -86,7 +90,7 @@ void drawVoxel(float x, float y, float z, float size, float data) {
         a=0.1;
         return;//temp
     }
-    else return;
+    else;
     glColor4f(r, g, b,a);
     glBegin(GL_QUADS);
     // Front face

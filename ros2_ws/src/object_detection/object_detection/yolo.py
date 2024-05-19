@@ -18,9 +18,7 @@ class YoloNode(image_node.ImageNode):
         # The boundingBoxes should be a list of dictionaries containing 'class_id', 'confidence', 'x', 'y', 'w', 'h'
         boundingBoxes = [
             {'class_id': 1, 'confidence': 0.95, 'x': 50, 'y': 50, 'w': 100, 'h': 150},
-            {'class_id': 2, 'confidence': 0.85, 'x': 200, 'y': 100, 'w': 120, 'h': 160},
-            {'class_id': 3, 'confidence': 0.75, 'x': 300, 'y': 200, 'w': 80, 'h': 120},
-            {'class_id': 1, 'confidence': 0.90, 'x': 400, 'y': 300, 'w': 150, 'h': 200}
+            {'class_id': 3, 'confidence': 0.85, 'x': 160, 'y': 100, 'w': 120, 'h': 50},
         ]#fake testing data
         return boundingBoxes
 
@@ -39,28 +37,36 @@ class YoloNode(image_node.ImageNode):
         # Create labeled image
         height, width, _ = cv_image.shape
         labeled_image = np.zeros((height, width, 2), dtype=np.float32)
-
         
         for box in boundingBoxes:
             class_id = box['class_id']
             confidence = box['confidence']
             x, y, w, h = box['x'], box['y'], box['w'], box['h']
-            # Apply the most confident class onto the image
-            for i in range(x, x + w):
-                for j in range(y, y + h):
-                    if confidence > labeled_image[j, i, 1]:  # Compare with the stored confidence
-                        labeled_image[j, i, 0] = class_id
-                    labeled_image[j, i, 1] = confidence
+            x = max(0, min(x, width - 1))
+            y = max(0, min(y, height - 1))
+            w = max(0, min(w, width - x))
+            h = max(0, min(h, height - y))
 
-        try:
-            # Convert labeled image to ROS Image message
-            labeled_msg = self.bridge.cv2_to_imgmsg(labeled_image, encoding="32FC2")
-        except CvBridgeError as e:
-            self.get_logger().error(f"Failed to convert labeled image: {e}")
-            return
+            # Create slices for the region of interest
+            roi_x = slice(x, x + w)
+            roi_y = slice(y, y + h)
 
-        # Publish the labeled image
-        self.publisher_.publish(labeled_msg)
+            # Update class and confidence images using NumPy's vectorized operations
+            mask = confidence > labeled_image[roi_y, roi_x, 1]
+            labeled_image[roi_y, roi_x, 0] = np.where(mask, class_id, labeled_image[roi_y, roi_x, 0])
+            labeled_image[roi_y, roi_x, 1] = np.where(mask, confidence, labeled_image[roi_y, roi_x, 1])
+
+            try:
+                # Convert labeled image to ROS Image message
+                labeled_msg = self.bridge.cv2_to_imgmsg(labeled_image, encoding="32FC2")
+            except CvBridgeError as e:
+                self.get_logger().error(f"Failed to convert labeled image: {e}")
+                return
+
+            # Publish the labeled image
+
+            labeled_msg.header.stamp=self.get_clock().now().to_msg()
+            self.publisher_.publish(labeled_msg)
 
 def main(args=None):
     rclpy.init(args=args)
