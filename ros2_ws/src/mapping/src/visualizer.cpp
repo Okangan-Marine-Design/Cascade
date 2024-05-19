@@ -84,6 +84,7 @@ void drawVoxel(float x, float y, float z, float size, float data) {
         g=0.5;
         b=1.0;
         a=0.1;
+        return;//temp
     }
     else return;
     glColor4f(r, g, b,a);

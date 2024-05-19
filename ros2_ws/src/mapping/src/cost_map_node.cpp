@@ -16,7 +16,7 @@ class CostmapNode : public rclcpp::Node
 {
     public:
         CostmapNode() 
-        : Node("motion_planner_node"), costmap(0.2){ 
+        : Node("costmap_node"), costmap(0.2){ 
 
         costmap_subscription = this->create_subscription<cascade_msgs::msg::VoxelGrid>("/voxel_grid", 10, std::bind(&CostmapNode::costmap_callback, this, _1));
         gridPublisher = this->create_publisher<cascade_msgs::msg::VoxelGrid>("/costmap_grid", 10);
@@ -30,26 +30,26 @@ class CostmapNode : public rclcpp::Node
         }
 
         void inflateObstacles(const float& data, const Bonxai::CoordT& coord){
-            if(data!=1.0)return;
-            Bonxai::Point3D pos = costmap.coordToPos(coord);
-            auto accessor= costmap.createAccessor();
-            int range=2;
-            for(int x=-range;x<=range;x++){
-                for(int y=-range;y<=range;y++){
-                    for(int z=-range;z<=range;z++){
-                        if(abs(z)==range || abs(y)==range || abs(x)==range){
-                            accessor.setCellOn(costmap.posToCoord(pos.x+x*costmap.resolution, pos.y+y*costmap.resolution, pos.z+z*costmap.resolution), -1.0);
-                        }
-                    }
-                }
-            }
+            
         }
 
         void inflateMap(){
             if(loading || working)return;
             working=true;
-            auto inflateObstaclesLambda = [this](const float& data, const Bonxai::CoordT& coord) {
-                this->inflateObstacles(data, coord); // Call the member function using instance-specific data
+            auto accessor= costmap.createAccessor();
+            auto inflateObstaclesLambda = [this, &accessor](const float& data, const Bonxai::CoordT& coord) {
+                if(data!=1.0)return;
+                Bonxai::Point3D pos = costmap.coordToPos(coord);
+                int range=2;
+                for(int x=-range;x<=range;x++){
+                    for(int y=-range;y<=range;y++){
+                        for(int z=-range;z<=range;z++){
+                            if(abs(z)==range || abs(y)==range || abs(x)==range){
+                                accessor.setCellOn(costmap.posToCoord(pos.x+x*costmap.resolution, pos.y+y*costmap.resolution, pos.z+z*costmap.resolution), -1.0);
+                            }
+                        }
+                    }
+                }
             };
             costmap.forEachCell(inflateObstaclesLambda);
             working=false;
