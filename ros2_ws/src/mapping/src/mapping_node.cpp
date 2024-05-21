@@ -26,7 +26,7 @@ rclcpp::Publisher<cascade_msgs::msg::VoxelGrid>::SharedPtr gridPublisher;
 bool inserting=false;
 
 double voxel_resolution = 0.15;
-Bonxai::VoxelGrid<float> grid( voxel_resolution );
+Bonxai::VoxelGrid<std::array<int, 2>> grid( voxel_resolution );
 
 
 float depth_to_meters(float d){
@@ -89,7 +89,7 @@ bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
         for (int v = 0; v < h; ++v) {
             float depth = depth_img.at<cv::Vec3f>(v, u)[0]; // Extract depth from the first channel
             int class_id = static_cast<int>(depth_img.at<cv::Vec3f>(v, u)[1]); // Extract class from the second channel
-            float confidence = depth_img.at<cv::Vec3f>(v, u)[2]; // Extract confidence from the third channel
+            int confidence = static_cast<int>(depth_img.at<cv::Vec3f>(v, u)[2]); // Extract confidence from the third channel
 
             float x = depth_to_meters(depth);
             if (x > 0 && x < MAX_DIST) {  
@@ -108,7 +108,7 @@ bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
                 z -= img.pose.position.z;
 
                 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
-                accessor.setValue(coord, class_id); // Set voxel value to class ID
+                accessor.setValue(coord, {class_id,confidence}); // Set voxel value to class ID
             }
         }  
     }
