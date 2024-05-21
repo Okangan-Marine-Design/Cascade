@@ -1,25 +1,17 @@
-from time import sleep
+
+import py_trees
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
 from py_trees.composites import Sequence
 from py_trees.composites import Selector
-from py_trees import logging
-from py_trees.decorators import Decorator 
+from py_trees.decorators import Retry
+from time import sleep
 
 
 #This is a blank version of the behavior tree for the prequalifier gate
 #You can run this code to see how it goes through the behavior tree
 #Just note that running it this way does not return failure on any of the nodes
 #Each action and condition is currently left blank without a function
-
-
-
-
-
-
-
-
-
 
 
 #Defining an action
@@ -61,37 +53,14 @@ class Condition(Behaviour):
     def terminate(self, new_status):
         self.logger.debug(f"Condition::terminate{self.name} to {new_status}")
         
-#This is defining a Decorator node that allows a child node to fail a certain number of times before returning failure to the parent
-#There are still other functionalities to a decorator node.
-class MaxFailures(Decorator):
 
-    def __init__(self, name, max_failures, child):
-       
-        super(MaxFailures, self).__init__(name=name, child=child)
-        self.max_failures = max_failures
-        self.failures_count = 0
-
-    def update(self):
-    
-        # Update the child node
-        status = self.children[0].update()
-
-        # If child node fails, increment the failures count
-        if status == Status.FAILURE:
-            self.failures_count += 1
-
-        # If the number of failures exceeds the maximum allowed, return FAILURE
-        if self.failures_count >= self.max_failures:
-            return Status.FAILURE
-
-        # Otherwise, return the status of the child node
-        return status
-        
         
 #defining the creating of the behaviour tree
 #here I start with the lowest nodes and build up
-def make_bt():
-    root = Sequence(name="sequence", memory = True)
+    
+if __name__ == '__main__':
+
+    root = py_trees.composites.Sequence(name = "root", memory = True)
     
     orient = Action("orient")
     go_thru = Action("go_thru")
@@ -112,7 +81,7 @@ def make_bt():
     sequence2.add_child(found_gate)
     
     found_or_thru1 = Condition("found_or_thru1")
-    decorator1 = MaxFailures("decorator1", max_failures = 6, child = sequence2)
+    decorator1 = Retry(name = "decorator1", child = sequence2, num_failures=6)
     
     selector1 = Selector(name = "selector1", memory = True)
     
@@ -127,17 +96,23 @@ def make_bt():
     sequence1.add_child(selector1)
     sequence1.add_child(sequence3)
     
-    
-    
-    root.add_children(
-        [
-            sequence1
-        ]
+    root.add_children([sequence1])
+
+    behaviour_tree = py_trees.trees.BehaviourTree(
+        root=root
     )
-    
-    return root
-    
-if __name__ == "__main__":
-    logging.level = logging.level.DEBUG
-    tree = make_bt()
-    tree.tick_once()
+    print(py_trees.display.unicode_tree(root=root))
+    behaviour_tree.setup(timeout=15)
+
+    def print_tree(tree):
+        print(py_trees.display.unicode_tree(root=tree.root, show_status=True))
+
+    try:
+        behaviour_tree.tick_tock(
+            period_ms=500,
+            number_of_iterations=py_trees.trees.CONTINUOUS_TICK_TOCK,
+            pre_tick_handler=None,
+            post_tick_handler=print_tree
+        )
+    except KeyboardInterrupt:
+        behaviour_tree.interrupt()
