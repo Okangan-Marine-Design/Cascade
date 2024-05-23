@@ -90,6 +90,7 @@ bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
             float depth = depth_img.at<cv::Vec3f>(v, u)[0]; // Extract depth from the first channel
             int class_id = static_cast<int>(depth_img.at<cv::Vec3f>(v, u)[1]); // Extract class from the second channel
             int confidence = static_cast<int>(depth_img.at<cv::Vec3f>(v, u)[2]); // Extract confidence from the third channel
+            //if(class_id==0)continue;
 
             float x = depth_to_meters(depth);
             if (x > 0 && x < MAX_DIST) {  
@@ -108,7 +109,14 @@ bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
                 z -= img.pose.position.z;
 
                 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
-                accessor.setValue(coord, {class_id,confidence}); // Set voxel value to class ID
+                if(accessor.value(coord)!=nullptr){//if there is somethign already in the current voxel
+                    if(confidence >= (*accessor.value(coord))[1])//only change the class if we are more confident in the new recognition
+                        accessor.setValue(coord, {class_id,confidence}); // Set voxel value to class ID
+                    else
+                        accessor.setValue(coord, {(*accessor.value(coord))[0],(*accessor.value(coord))[1]*.9});//if we detect a lower cionfidence or a differnt class, start decaying the confidence value of the current voxel
+                }
+                else
+                    accessor.setValue(coord, {class_id,confidence});//if there isnt anything in current voxel, insert the detected class and confidence
             }
         }  
     }

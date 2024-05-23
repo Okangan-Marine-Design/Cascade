@@ -145,7 +145,7 @@ inline HeaderInfo GetHeaderInfo(std::string header)
   {
     throw std::runtime_error("Header wasn't recognized");
   }
-  int p1 = header.find_last_of(",", header.find_last_of(",", header.length())-1) + 1;//gets second last in a jank way
+  int p1 = header.find_last_of(",", header.find_last_of(",", header.length())-1) + 1;
   auto part_type = header.substr(18, p1 - 18 - 1);
 
   int p2 = header.find(",", p1 + 1) + 1;

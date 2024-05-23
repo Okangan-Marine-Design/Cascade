@@ -2,6 +2,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "cascade_msgs/msg/movement_command.hpp"
 #include "cascade_msgs/msg/status.hpp"
+#include "cascade_msgs/msg/classes.hpp"
 #include "cascade_msgs/msg/goal_pose.hpp"
 #include "cascade_msgs/msg/voxel_grid.hpp"
 #include "geometry_msgs/msg/pose.hpp"
@@ -9,6 +10,8 @@
 #include "bonxai/bonxai.hpp"
 #include "bonxai/serialization.hpp"
 #include <tf2/LinearMath/Vector3.h>
+#include <queue>
+#include <vector>
 
 using std::placeholders::_1;
 
@@ -32,20 +35,20 @@ class CostmapNode : public rclcpp::Node
         void inflateObstacles(const float& data, const Bonxai::CoordT& coord){
             
         }
-
         void inflateMap(){
             if(loading || working)return;
             working=true;
             auto accessor= costmap.createAccessor();
             auto inflateObstaclesLambda = [this, &accessor](const std::array<int,2>& data, const Bonxai::CoordT& coord) {
-                if(data[0]!=1)return;
                 Bonxai::Point3D pos = costmap.coordToPos(coord);
-                int range=2;
-                for(int x=-range;x<=range;x++){//TODO: speed this up somehow
+                int range=3;
+                for(int x=-range;x<=range;x++){
                     for(int y=-range;y<=range;y++){
                         for(int z=-range;z<=range;z++){
                             if(abs(z)==range || abs(y)==range || abs(x)==range){
-                                accessor.setCellOn(costmap.posToCoord(pos.x+x*costmap.resolution, pos.y+y*costmap.resolution, pos.z+z*costmap.resolution), {-1,100});
+                                accessor.setCellOn(
+                                        costmap.posToCoord(pos.x+x*costmap.resolution, pos.y+y*costmap.resolution, pos.z+z*costmap.resolution), 
+                                        {cascade_msgs::msg::Classes::INFLATED,100});
                             }
                         }
                     }
@@ -54,6 +57,7 @@ class CostmapNode : public rclcpp::Node
             costmap.forEachCell(inflateObstaclesLambda);
             working=false;
         }
+
 
         bool replaceCostmap(cascade_msgs::msg::VoxelGrid msg){
             if(loading || working)return false;
@@ -69,41 +73,6 @@ class CostmapNode : public rclcpp::Node
             costmap=std::move(g);
             loading=false;
             return true;
-        }
-
-        class node{
-            public:
-            float x,y,z,dist,cost;
-            bool operator==(const node& n) const{
-                return abs(x - n.x)<0.1 && abs(y - n.y)<0.1 && abs(z - n.z)<0.1;
-            }
-            bool operator<(const node& n) const{
-                return (cost+dist)<(n.cost+n.dist);
-            }
-
-        };
-        
-        struct nodeHash {
-            std::size_t operator()(const node& s) const {
-                std::size_t hashX = std::hash<float>()(s.x);
-                std::size_t hashY = std::hash<float>()(s.y);
-                std::size_t hashZ = std::hash<float>()(s.z);
-
-                // Combine hash values using bitwise XOR and multiplication
-                return hashX ^ (hashY << 1) ^ (hashZ << 2);
-            }
-        };
-        
-        struct nodeCompare {
-            bool operator()(const node& n1, const node& n2) const { return (n1.cost+n1.dist)>(n2.cost+n2.dist); }
-        };
-
-        float dist(node n1, node n2){
-            return pow(
-                        pow(n1.x-n2.x,2)+
-                        pow(n1.y-n2.y,2)+
-                        pow(n1.z-n2.z,2)
-                        ,1.0/2.0);
         }
 
         void publishVoxelGrid(){

@@ -17,8 +17,8 @@ class YoloNode(image_node.ImageNode):
         # Insert YOLO inferencing code here
         # The boundingBoxes should be a list of dictionaries containing 'class_id', 'confidence', 'x', 'y', 'w', 'h'
         boundingBoxes = [
-            {'class_id': 1, 'confidence': 0.95, 'x': 50, 'y': 50, 'w': 100, 'h': 150},
-            {'class_id': 3, 'confidence': 0.85, 'x': 160, 'y': 100, 'w': 120, 'h': 50},
+            {'class_id': 1, 'confidence': 100, 'x': 50, 'y': 50, 'w': 100, 'h': 150},
+            {'class_id': 2, 'confidence': 100, 'x': 160, 'y': 100, 'w': 120, 'h': 50},
         ]#fake testing data
         return boundingBoxes
 
@@ -46,7 +46,7 @@ class YoloNode(image_node.ImageNode):
             y = max(0, min(y, height - 1))
             w = max(0, min(w, width - x))
             h = max(0, min(h, height - y))
-
+            
             # Create slices for the region of interest
             roi_x = slice(x, x + w)
             roi_y = slice(y, y + h)

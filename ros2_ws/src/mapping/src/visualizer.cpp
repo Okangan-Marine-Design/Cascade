@@ -6,6 +6,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "cascade_msgs/msg/voxel_grid.hpp"
+#include "cascade_msgs/msg/classes.hpp"
 #include <sstream>
 #include <vector>
 
@@ -60,62 +61,41 @@ if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 
 // Function to draw a single voxel
 void drawVoxel(float x, float y, float z, float size, std::array<int,2> data) {
-    float r=0,g=0,b=0,a=1;
+    float r=0,g=0,b=0,a;
+    a=(float)data[1]/100.0;
+    a=1.0;
     switch(data[0]){//change class to be integer instead of float
-        case 1:
+        case cascade_msgs::msg::Classes::OBSTACLE:
             r=0.0;
             g=1.0;
             b=0.5;
-            a=1.0;
         break;
-        case 2:
+        case cascade_msgs::msg::Classes::PATH:
             r=1.0;
             g=0.0;
             b=0.0;
-            a=1.0;
         break;
-        case 3:
+        case cascade_msgs::msg::Classes::CHECKPOINT:
             r=0.5;
             g=0.0;
             b=0.5;
-            a=0.3;
         break;
-        case -1:
+        case cascade_msgs::msg::Classes::INFLATED:
             r=0.0;
             g=0.5;
             b=1.0;
-            a=0.1;
-            return;
-        break;
+            //return;//dont want to draw inflated region
+            break;
+        case cascade_msgs::msg::Classes::GATE:
+            r=1.0;
+            g=0.67;
+            b=0.0;
+            //return;//dont want to draw inflated region
+            break;
+        default:
+            return;//if the class is anything we dont recognize for some reason, dont display it
+            break;
     }
-    /*
-    if(data==1.0){//general obstacle
-        r=0.0;
-        g=1.0;
-        b=0.5;
-        a=1.0;
-    }
-    else if(data==2.0){//path
-        r=1.0;
-        g=0.0;
-        b=0.0;
-        a=1.0;
-    }
-    else if(data==3.0){//next path checkpoint (goal pose)
-        r=0.5;
-        g=0.0;
-        b=0.5;
-        a=0.3;
-    }
-    else if(data==-1.0){//inflated obstacle region
-        r=0.0;
-        g=0.5;
-        b=1.0;
-        a=0.1;
-        return;//temp
-    }
-    else;
-    */
     glColor4f(r, g, b,a);
     glBegin(GL_QUADS);
     // Front face

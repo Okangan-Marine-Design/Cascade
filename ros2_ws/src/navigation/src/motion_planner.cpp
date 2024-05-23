@@ -4,6 +4,7 @@
 #include "cascade_msgs/msg/status.hpp"
 #include "cascade_msgs/msg/goal_pose.hpp"
 #include "cascade_msgs/msg/voxel_grid.hpp"
+#include "cascade_msgs/msg/classes.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "bonxai/bonxai.hpp"
@@ -148,13 +149,13 @@ class MotionPlannerNode : public rclcpp::Node
 
         bool isValidNode(std::array<int,2>* pointer){
             if(pointer==nullptr)return true;
-            if((*pointer)[0]==-1 || (*pointer)[0]==0)return true;
+            //if((*pointer)[0]==cascade_msgs::msg::Classes::INFLATED)return false;//node is valid to be travelled to if its part of the costmap or if its empty
             return false;
         }
 
         bool isInflatedNode(std::array<int,2>* pointer){
             if(pointer==nullptr)return false;
-            if((*pointer)[0]==-1)return true;
+            if((*pointer)[0]==cascade_msgs::msg::Classes::INFLATED)return true;
             return false;
         }
 
@@ -246,64 +247,6 @@ class MotionPlannerNode : public rclcpp::Node
             }
             return result;
         }
-        /*
-        std::vector<node> bestFirstSearch(){
-            std::vector<node> result;
-            auto accessor=costmap.createAccessor();
-            //start node -> check every node around 
-            //for each valid node (not an obstacle) check the straight line distance to the goal
-            //add current node to list of path nodes
-            //make best surrounding node current node
-            //repeat until at goal
-            //
-            //set each path node as 2.0 and publish for visualization
-            node current,goal;
-            current.x = currentPoseMsg.pose.position.x;
-            current.y = currentPoseMsg.pose.position.y;
-            current.z = -currentPoseMsg.pose.position.z;
-            goal.x = currentEndPoseMsg.pose.position.x;
-            goal.y = currentEndPoseMsg.pose.position.y;
-            goal.z = -currentEndPoseMsg.pose.position.z;//why does this need to be negative i have no clue
-            std::vector<node> surrounding, path;
-            std::unordered_set<node, nodeHash> visited;
-            while(dist(current,goal)>costmap.resolution*1.5){
-                for(int x=-1;x<=1;x++){
-                    for(int y=-1;y<=1;y++){
-                        for(int z=-1;z<=1;z++){
-                            node tempNode;
-                            tempNode.x=current.x+x*costmap.resolution;
-                            tempNode.y=current.y+y*costmap.resolution;
-                            tempNode.z=current.z+z*costmap.resolution;
-                            if(visited.count(tempNode)==0){
-                                surrounding.push_back(tempNode);
-                            }
-                        }
-                    }
-                }
-                //std::string logMessage = "There are " + std::to_string(surrounding.size()) + " valid neighbors";
-                //RCLCPP_INFO(this->get_logger(), logMessage.c_str());
-                node best;
-                float minDist=std::numeric_limits<float>::infinity();
-                for(node n: surrounding){
-                    Bonxai::CoordT coord = costmap.posToCoord(n.x, n.y, n.z);
-                    float* value_ptr = accessor.value( coord );
-                    bool valid=false;
-                    if(value_ptr==nullptr)valid=true;
-                    if(valid && dist(n,goal)<=minDist){//if the cell is unoccupied and it is the best cell so far
-                        best=n;
-                        minDist=dist(n,goal);
-                        //RCLCPP_INFO(this->get_logger(), "got a better option");
-                    }
-                }
-                surrounding.clear();
-                current=best;
-                visited.insert(best);
-                result.push_back(best);
-            }
-            //push back results (back track from goal)
-            return result;
-        }
-    */
     float start2EndError(std::vector<node> nodes) {
         float result = 0;
         if (nodes.size() < 2) {
@@ -360,7 +303,7 @@ class MotionPlannerNode : public rclcpp::Node
                 //std::string logMessage = "Error :" + std::to_string(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last)));
                 //RCLCPP_INFO(this->get_logger(), logMessage.c_str());
                 current=last;
-                accessor.setValue(costmap.posToCoord(path[current].x,path[current].y,path[current].z), {3,100});
+                accessor.setValue(costmap.posToCoord(path[current].x,path[current].y,path[current].z), {cascade_msgs::msg::Classes::CHECKPOINT,100});
                 gpose temp=gpose();
                 temp.copy_orientation=false;
                 temp.pose.position.x=path[current].x;
@@ -378,7 +321,7 @@ class MotionPlannerNode : public rclcpp::Node
                 result=temp;
             }
             for(node n: path){
-                accessor.setCellOn(costmap.posToCoord(n.x,n.y,n.z), {2,100});
+                accessor.setCellOn(costmap.posToCoord(n.x,n.y,n.z), {cascade_msgs::msg::Classes::PATH,100});
             }
             
             //insert the path nodes into the costmap and publish under /path_grid
