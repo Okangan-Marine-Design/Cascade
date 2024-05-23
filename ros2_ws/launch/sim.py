@@ -195,6 +195,7 @@ def generate_launch_description():
         Node(
             package='mapping',
             executable='costmap_node',
+            #prefix=['gdbserver localhost:3000']
         ),
         ]
     )

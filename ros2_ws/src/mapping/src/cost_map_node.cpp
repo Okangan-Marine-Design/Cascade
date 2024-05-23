@@ -37,15 +37,15 @@ class CostmapNode : public rclcpp::Node
             if(loading || working)return;
             working=true;
             auto accessor= costmap.createAccessor();
-            auto inflateObstaclesLambda = [this, &accessor](const float& data, const Bonxai::CoordT& coord) {
-                if(data!=1.0)return;
+            auto inflateObstaclesLambda = [this, &accessor](const std::array<int,2>& data, const Bonxai::CoordT& coord) {
+                if(data[0]!=1)return;
                 Bonxai::Point3D pos = costmap.coordToPos(coord);
                 int range=2;
-                for(int x=-range;x<=range;x++){
+                for(int x=-range;x<=range;x++){//TODO: speed this up somehow
                     for(int y=-range;y<=range;y++){
                         for(int z=-range;z<=range;z++){
                             if(abs(z)==range || abs(y)==range || abs(x)==range){
-                                accessor.setCellOn(costmap.posToCoord(pos.x+x*costmap.resolution, pos.y+y*costmap.resolution, pos.z+z*costmap.resolution), -1.0);
+                                accessor.setCellOn(costmap.posToCoord(pos.x+x*costmap.resolution, pos.y+y*costmap.resolution, pos.z+z*costmap.resolution), {-1,100});
                             }
                         }
                     }
@@ -65,7 +65,7 @@ class CostmapNode : public rclcpp::Node
             char header[256];
             ifile.getline(header, 256);
             Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
-            auto g=Bonxai::Deserialize<float>(ifile, info);
+            auto g=Bonxai::Deserialize<std::array<int,2>>(ifile, info);
             costmap=std::move(g);
             loading=false;
             return true;
@@ -120,7 +120,7 @@ class CostmapNode : public rclcpp::Node
         }
 
         bool loading=false, working=false;
-        Bonxai::VoxelGrid<float> costmap;
+        Bonxai::VoxelGrid<std::array<int,2>> costmap;
         rclcpp::Publisher<cascade_msgs::msg::VoxelGrid>::SharedPtr gridPublisher;
         rclcpp::Subscription<cascade_msgs::msg::VoxelGrid>::SharedPtr costmap_subscription;
 };

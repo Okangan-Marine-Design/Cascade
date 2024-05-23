@@ -63,6 +63,29 @@ void drawVoxel(float x, float y, float z, float size, std::array<int,2> data) {
     float r=0,g=0,b=0,a=1;
     switch(data[0]){//change class to be integer instead of float
         case 1:
+            r=0.0;
+            g=1.0;
+            b=0.5;
+            a=1.0;
+        break;
+        case 2:
+            r=1.0;
+            g=0.0;
+            b=0.0;
+            a=1.0;
+        break;
+        case 3:
+            r=0.5;
+            g=0.0;
+            b=0.5;
+            a=0.3;
+        break;
+        case -1:
+            r=0.0;
+            g=0.5;
+            b=1.0;
+            a=0.1;
+            return;
         break;
     }
     /*

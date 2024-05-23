@@ -79,7 +79,7 @@ class MotionPlannerNode : public rclcpp::Node
             char header[256];
             ifile.getline(header, 256);
             Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
-            auto g=Bonxai::Deserialize<float>(ifile, info);
+            auto g=Bonxai::Deserialize<std::array<int,2>>(ifile, info);
             costmap=std::move(g);
             loading=false;
             inserted=true;
@@ -146,15 +146,15 @@ class MotionPlannerNode : public rclcpp::Node
             gridPublisher->publish(gridMsg);
         }
 
-        bool isValidNode(float* pointer){
+        bool isValidNode(std::array<int,2>* pointer){
             if(pointer==nullptr)return true;
-            if(*pointer==-1.0 || *pointer==0.0)return true;
+            if((*pointer)[0]==-1 || (*pointer)[0]==0)return true;
             return false;
         }
 
-        bool isInflatedNode(float* pointer){
+        bool isInflatedNode(std::array<int,2>* pointer){
             if(pointer==nullptr)return false;
-            if(*pointer==-1.0)return true;
+            if((*pointer)[0]==-1)return true;
             return false;
         }
 
@@ -173,7 +173,7 @@ class MotionPlannerNode : public rclcpp::Node
             goal.y = currentEndPoseMsg.pose.position.y;
             goal.z = -currentEndPoseMsg.pose.position.z;//why does this need to be negative i have no clue
 
-            float *goal_value = accessor.value(costmap.posToCoord(goal.x, goal.y, goal.z)), 
+            std::array<int, 2> *goal_value = accessor.value(costmap.posToCoord(goal.x, goal.y, goal.z)), 
                     *start_value = accessor.value(costmap.posToCoord(start.x, start.y, start.z));
             if(!isValidNode(goal_value) || !isValidNode(start_value))return result;//if goal is inside an obstacle dont even try
 
@@ -211,7 +211,7 @@ class MotionPlannerNode : public rclcpp::Node
                             tempNode.y=current.y+y*costmap.resolution*0.75;
                             tempNode.z=current.z+z*costmap.resolution*0.75;
                             Bonxai::CoordT coord = costmap.posToCoord(tempNode.x, tempNode.y, tempNode.z);
-                            float* value_ptr = accessor.value( coord );
+                            std::array<int, 2>* value_ptr = accessor.value( coord );
                             if(isValidNode(value_ptr)){
                                 if(checked.count(tempNode)>0){
                                     tempNode=*checked.find(tempNode);
@@ -224,9 +224,9 @@ class MotionPlannerNode : public rclcpp::Node
                 }
                 for(node n: surrounding){
                     float score=current.cost+dist(current,n);
-                    float* value_ptr = accessor.value(costmap.posToCoord(n.x, n.y, n.z));
+                    std::array<int, 2>* value_ptr = accessor.value(costmap.posToCoord(n.x, n.y, n.z));
                     if(isInflatedNode(value_ptr))
-                        score+=100*(abs(*value_ptr))*dist(current,n);//to discourage using inflated nodes, but allowing it if really needed
+                        score+=5*dist(current,n);//to discourage using inflated nodes, but allowing it if really needed
                     if(score<n.cost){
                         previous[n]=current;
                         n.cost=score;
@@ -246,7 +246,7 @@ class MotionPlannerNode : public rclcpp::Node
             }
             return result;
         }
-
+        /*
         std::vector<node> bestFirstSearch(){
             std::vector<node> result;
             auto accessor=costmap.createAccessor();
@@ -303,46 +303,46 @@ class MotionPlannerNode : public rclcpp::Node
             //push back results (back track from goal)
             return result;
         }
+    */
+    float start2EndError(std::vector<node> nodes) {
+        float result = 0;
+        if (nodes.size() < 2) {
+            return result; // Not enough nodes to calculate error
+        }
 
-        float start2EndError(std::vector<node> nodes) {
-    float result = 0;
-    if (nodes.size() < 2) {
-        return result; // Not enough nodes to calculate error
-    }
-
-    tf2::Vector3 line_point1(nodes.front().x, nodes.front().y, nodes.front().z);
-    tf2::Vector3 line_point2(nodes.back().x, nodes.back().y, nodes.back().z);
+        tf2::Vector3 line_point1(nodes.front().x, nodes.front().y, nodes.front().z);
+        tf2::Vector3 line_point2(nodes.back().x, nodes.back().y, nodes.back().z);
     
-    for (const node& n : nodes) {
-        tf2::Vector3 point(n.x, n.y, n.z);
-        tf2::Vector3 line_direction = line_point2 - line_point1;
+        for (const node& n : nodes) {
+            tf2::Vector3 point(n.x, n.y, n.z);
+            tf2::Vector3 line_direction = line_point2 - line_point1;
 
         // Calculate the vector from one of the points on the line to the separate point
-        tf2::Vector3 vector_to_point = point - line_point1;
+            tf2::Vector3 vector_to_point = point - line_point1;
 
-        // Calculate the squared magnitude of the direction vector
-        double mag_squared = line_direction.length2();
-        if (mag_squared == 0) {
-            continue; // Avoid division by zero
+            // Calculate the squared magnitude of the direction vector
+            double mag_squared = line_direction.length2();
+            if (mag_squared == 0) {
+                continue; // Avoid division by zero
+            }
+
+            // Calculate the dot product
+            double dot_product = vector_to_point.dot(line_direction);
+
+            // Calculate the projection of vector_to_point onto the direction vector of the line
+            tf2::Vector3 projection = (dot_product / mag_squared) * line_direction;
+
+            // Calculate the vector from the original point to the projected point
+            tf2::Vector3 distance_vector = point - (line_point1 + projection);
+
+            // Calculate the magnitude of the distance vector
+            double distance = distance_vector.length();
+            if (!std::isnan(distance)) {
+                result += distance;
+            }
         }
-
-        // Calculate the dot product
-        double dot_product = vector_to_point.dot(line_direction);
-
-        // Calculate the projection of vector_to_point onto the direction vector of the line
-        tf2::Vector3 projection = (dot_product / mag_squared) * line_direction;
-
-        // Calculate the vector from the original point to the projected point
-        tf2::Vector3 distance_vector = point - (line_point1 + projection);
-
-        // Calculate the magnitude of the distance vector
-        double distance = distance_vector.length();
-        if (!std::isnan(distance)) {
-            result += distance;
-        }
+        return result;
     }
-    return result;
-}
         gpose calculatePath(){//best first search at the moment, if it turns out to be too slow the algo will be changed
             gpose result=gpose();
             if(searching || loading)return result;
@@ -360,7 +360,7 @@ class MotionPlannerNode : public rclcpp::Node
                 //std::string logMessage = "Error :" + std::to_string(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last)));
                 //RCLCPP_INFO(this->get_logger(), logMessage.c_str());
                 current=last;
-                accessor.setValue(costmap.posToCoord(path[current].x,path[current].y,path[current].z), 3.0);
+                accessor.setValue(costmap.posToCoord(path[current].x,path[current].y,path[current].z), {3,100});
                 gpose temp=gpose();
                 temp.copy_orientation=false;
                 temp.pose.position.x=path[current].x;
@@ -378,7 +378,7 @@ class MotionPlannerNode : public rclcpp::Node
                 result=temp;
             }
             for(node n: path){
-                accessor.setCellOn(costmap.posToCoord(n.x,n.y,n.z), 2.0);
+                accessor.setCellOn(costmap.posToCoord(n.x,n.y,n.z), {2,100});
             }
             
             //insert the path nodes into the costmap and publish under /path_grid
@@ -389,7 +389,7 @@ class MotionPlannerNode : public rclcpp::Node
         }
 
         bool loading=false, haveGoal=false, searching=false, newGoal=true;
-        Bonxai::VoxelGrid<float> costmap;
+        Bonxai::VoxelGrid<std::array<int,2>> costmap;
         gpose currentGoalPose;
         rclcpp::Publisher<cascade_msgs::msg::VoxelGrid>::SharedPtr gridPublisher;
         geometry_msgs::msg::PoseStamped currentPoseMsg;
