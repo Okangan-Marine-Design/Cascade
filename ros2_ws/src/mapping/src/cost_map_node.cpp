@@ -32,14 +32,12 @@ class CostmapNode : public rclcpp::Node
             publishVoxelGrid();
         }
 
-        void inflateObstacles(const float& data, const Bonxai::CoordT& coord){
-            
-        }
         void inflateMap(){
             if(loading || working)return;
             working=true;
             auto accessor= costmap.createAccessor();
             auto inflateObstaclesLambda = [this, &accessor](const std::array<int,2>& data, const Bonxai::CoordT& coord) {
+                if(accessor.value(coord)==nullptr)return;
                 Bonxai::Point3D pos = costmap.coordToPos(coord);
                 int range=3;
                 for(int x=-range;x<=range;x++){

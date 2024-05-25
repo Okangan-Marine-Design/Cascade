@@ -27,7 +27,7 @@ class MotionPlannerNode : public rclcpp::Node
         status_publisher = this->create_publisher<cascade_msgs::msg::Status>("/end_goal_status", 10);
 
         status_subscription = this->create_subscription<cascade_msgs::msg::Status>("/current_goal_status", 10, std::bind(&MotionPlannerNode::goal_status_callback, this, _1));
-        costmap_subscription = this->create_subscription<cascade_msgs::msg::VoxelGrid>("/costmap_grid", 10, std::bind(&MotionPlannerNode::costmap_callback, this, _1));
+        costmap_subscription = this->create_subscription<cascade_msgs::msg::VoxelGrid>("/voxel_grid", 10, std::bind(&MotionPlannerNode::costmap_callback, this, _1));
 
         current_pose_subscription = this->create_subscription<geometry_msgs::msg::PoseStamped>("/pose", 10, std::bind(&MotionPlannerNode::current_pose_callback, this, _1));
 
@@ -43,8 +43,7 @@ class MotionPlannerNode : public rclcpp::Node
         void current_pose_callback(geometry_msgs::msg::PoseStamped msg){
             //set current pose
             currentPoseMsg=msg;
-            if(haveGoal && (checkNewObstacles() || newGoal)){//check if there are any new obstacles from curr pose to current goal
-                newGoal=false;
+            if(haveGoal){//check if there are any new obstacles from curr pose to current goal
                 currentGoalPose=calculatePath();
                 goal_pose_publisher->publish(currentGoalPose);
 
@@ -63,8 +62,7 @@ class MotionPlannerNode : public rclcpp::Node
 
         void costmap_callback(cascade_msgs::msg::VoxelGrid msg){
             replaceCostmap(msg);
-            if(haveGoal && (checkNewObstacles() || newGoal)){//check if there are any new obstacles from curr pose to current goal
-                newGoal=false;
+            if(haveGoal){//check if there are any new obstacles from curr pose to current goal
                 currentGoalPose=calculatePath();
                 goal_pose_publisher->publish(currentGoalPose);
             }
@@ -85,10 +83,6 @@ class MotionPlannerNode : public rclcpp::Node
             loading=false;
             inserted=true;
             return true;
-        }
-
-        bool checkNewObstacles(){
-            return true;//assume always needs to be recalcualted for now
         }
         class node{
             public:
@@ -153,9 +147,22 @@ class MotionPlannerNode : public rclcpp::Node
             return false;
         }
 
-        bool isInflatedNode(std::array<int,2>* pointer){
-            if(pointer==nullptr)return false;
-            if((*pointer)[0]==cascade_msgs::msg::Classes::INFLATED)return true;
+        bool isDangerousNode(node n, Bonxai::VoxelGrid<std::array<int,2>>::Accessor accessor){
+            float radius=0.6;
+            for(float x=n.x-radius;x<n.x+radius;x+=2*costmap.resolution){
+                for(float y=n.y-radius;y<n.y+radius;y+=2*costmap.resolution){
+                    for(float z=n.z-radius;z<n.z+radius;z+=2*costmap.resolution){
+                            float squaredDist = (x - n.x) * (x - n.x) +
+                                (y - n.y) * (y - n.y) +
+                                (z - n.z) * (z - n.z);
+                        if (squaredDist <= radius*radius) {
+                            if (accessor.value(costmap.posToCoord(x, y, z))) {//if the cell is occupied 
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
             return false;
         }
 
@@ -208,9 +215,9 @@ class MotionPlannerNode : public rclcpp::Node
                     for(int y=-1;y<=1;y++){
                         for(int z=-1;z<=1;z++){
                             node tempNode;
-                            tempNode.x=current.x+x*costmap.resolution*0.75;
-                            tempNode.y=current.y+y*costmap.resolution*0.75;
-                            tempNode.z=current.z+z*costmap.resolution*0.75;
+                            tempNode.x=current.x+x*costmap.resolution*0.95;
+                            tempNode.y=current.y+y*costmap.resolution*0.95;
+                            tempNode.z=current.z+z*costmap.resolution*0.95;
                             Bonxai::CoordT coord = costmap.posToCoord(tempNode.x, tempNode.y, tempNode.z);
                             std::array<int, 2>* value_ptr = accessor.value( coord );
                             if(isValidNode(value_ptr)){
@@ -225,15 +232,15 @@ class MotionPlannerNode : public rclcpp::Node
                 }
                 for(node n: surrounding){
                     float score=current.cost+dist(current,n);
-                    std::array<int, 2>* value_ptr = accessor.value(costmap.posToCoord(n.x, n.y, n.z));
-                    if(isInflatedNode(value_ptr))
-                        score+=5*dist(current,n);//to discourage using inflated nodes, but allowing it if really needed
+                    //std::array<int, 2>* value_ptr = accessor.value(costmap.posToCoord(n.x, n.y, n.z));
+                    if(isDangerousNode(n, accessor))
+                        score+=50*dist(current,n);//to discourage using dangerous nodes, but allowing it if really needed
                     if(score<n.cost){
                         previous[n]=current;
                         n.cost=score;
-                        n.dist=dist(n,goal)*5;
-                        if(dist(n,goal)>dist(start,goal)*2)//if we are exploring nodes way far out, terminate to stop infinite looping
-                            reachable=false;//this might trigger early if goal and start are close
+                        n.dist=dist(n,goal)*10;
+                        //if(dist(n,goal)>dist(start,goal)*2)//if we are exploring nodes way far out, terminate to stop infinite looping
+                            //reachable=false;//this might trigger early if goal and start are close
                         if(checked.count(n)==0){
                             checked.insert(n);
                             openSet.push(n);
@@ -286,7 +293,8 @@ class MotionPlannerNode : public rclcpp::Node
         }
         return result;
     }
-        gpose calculatePath(){//best first search at the moment, if it turns out to be too slow the algo will be changed
+
+        gpose calculatePath(){
             gpose result=gpose();
             if(searching || loading)return result;
             auto accessor=costmap.createAccessor();
@@ -294,7 +302,7 @@ class MotionPlannerNode : public rclcpp::Node
             std::vector<node> path=aStarSearch();
             if(path.size()>1){
                 size_t last=0,current=0;
-                float threshold=0.25;
+                float threshold=0.5;
 
                 //RCLCPP_INFO(this->get_logger(), "starting node -> pose");
                 while(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last+1))<threshold && last<path.size()-1){
