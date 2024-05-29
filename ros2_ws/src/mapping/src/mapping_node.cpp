@@ -36,7 +36,24 @@ float depth_to_meters(float d){
 void find_object_callback(const std::shared_ptr<cascade_msgs::srv::FindObject::Request> request,
                                         std::shared_ptr<cascade_msgs::srv::FindObject::Response>      response)
 {
-        
+    auto accessor = grid.createAccessor();
+    float x,y,z;
+    x=y=z=0;
+    int total=0;
+    auto voxel_lambda = [&x,&y,&z,&accessor](const std::array<int,2>& data, const Bonxai::CoordT& coord) {
+        if(accessor.value(coord)==nullptr)return;
+        if(*accessor.value(coord)==request.object_type){
+            Bonxai::Point3D pos = costmap.coordToPos(coord);
+            x+=pos.x;
+            y+=pos.y;
+            z+=pos.z;
+            total++;
+        }
+    }
+    costmap.forEachCell(voxel_lambda);
+    response.pose.position.x=x/total;
+    response.pose.position.y=y/total;
+    response.pose.position.z=z/total;
 }
 
 void publishVoxelGrid(){

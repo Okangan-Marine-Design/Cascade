@@ -344,7 +344,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     // Create a windowed mode window and its OpenGL context
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Bonxai Voxel Visualizer", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1000, 1000, "Bonxai Voxel Visualizer", NULL, NULL);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();

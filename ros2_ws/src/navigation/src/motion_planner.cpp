@@ -302,7 +302,7 @@ class MotionPlannerNode : public rclcpp::Node
             std::vector<node> path=aStarSearch();
             if(path.size()>1){
                 size_t last=0,current=0;
-                float threshold=0.5;
+                float threshold=0.35;
 
                 //RCLCPP_INFO(this->get_logger(), "starting node -> pose");
                 while(start2EndError(std::vector<node>(path.begin()+current,path.begin()+last+1))<threshold && last<path.size()-1){
