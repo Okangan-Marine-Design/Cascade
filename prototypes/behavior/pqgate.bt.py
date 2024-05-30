@@ -104,16 +104,11 @@ class move_to_io(Behaviour):
     def terminate(self, new_status):
         self.logger.debug("  %s [move_to_io::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
         
-
-        
-
-        
-        
 #Defining a condition
 class io_is_gate(Behaviour):
     def __init__(self,name):
         super(io_is_gate,self).__init__(name)
-        
+
     def setup(self):
         self.logger.debug(f"io_is_gate::setup{self.name}")
         

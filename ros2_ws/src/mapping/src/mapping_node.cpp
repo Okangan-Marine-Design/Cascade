@@ -4,6 +4,7 @@
 #include <cv_bridge/cv_bridge.hpp>
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "cascade_msgs/msg/image_with_pose.hpp"
+#include "cascade_msgs/msg/classes.hpp"
 #include "cascade_msgs/srv/find_object.hpp"
 #include "cascade_msgs/msg/voxel_grid.hpp"
 #include <opencv2/core/core.hpp>
@@ -40,20 +41,35 @@ void find_object_callback(const std::shared_ptr<cascade_msgs::srv::FindObject::R
     float x,y,z;
     x=y=z=0;
     int total=0;
-    auto voxel_lambda = [&x,&y,&z,&accessor](const std::array<int,2>& data, const Bonxai::CoordT& coord) {
-        if(accessor.value(coord)==nullptr)return;
-        if(*accessor.value(coord)==request.object_type){
-            Bonxai::Point3D pos = costmap.coordToPos(coord);
+    auto voxel_lambda = [&x,&y,&z,&accessor, &grid, &total, &request](const std::array<int,2>& data, const Bonxai::CoordT& coord) {
+        if(data[0]==request->object_type){
+            Bonxai::Point3D pos = grid.coordToPos(coord);
             x+=pos.x;
             y+=pos.y;
             z+=pos.z;
             total++;
         }
+    };
+    grid.forEachCell(voxel_lambda);
+    if(total>0){
+        response->pose.position.x=x/total;
+        response->pose.position.y=y/total;
+        response->pose.position.z=z/total;
     }
-    costmap.forEachCell(voxel_lambda);
-    response.pose.position.x=x/total;
-    response.pose.position.y=y/total;
-    response.pose.position.z=z/total;
+}
+
+void insertArtificialGate(float x, float y, float z, float width, float height){
+    auto accessor = grid.createAccessor();
+    for(float i=-width;i<width;i+=grid.resolution*0.8){
+        Bonxai::CoordT coord = grid.posToCoord(x, y+i, z-height);
+        accessor.setValue(coord, {cascade_msgs::msg::Classes::GATE,100});
+    }
+    for(float j=-height;j<height;j+=grid.resolution*0.8){
+        Bonxai::CoordT coord = grid.posToCoord(x, y+width, z+j);
+        accessor.setValue(coord, {cascade_msgs::msg::Classes::GATE,100});
+        coord = grid.posToCoord(x, y-width, z+j);
+        accessor.setValue(coord, {cascade_msgs::msg::Classes::GATE,100});
+    }
 }
 
 void publishVoxelGrid(){
@@ -145,6 +161,7 @@ bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
 void img_subscription_callback(const cascade_msgs::msg::ImageWithPose &img_msg){
     //possibly add a queue for inserting the depth maps?
     insertDepthImage(img_msg);
+    insertArtificialGate(-5,0,0,2.5,1);
 }
 
 int main(int argc, char **argv)

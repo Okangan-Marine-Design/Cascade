@@ -192,10 +192,5 @@ def generate_launch_description():
             package='hardware_integration',
             executable='serial_output',
         ),
-        Node(
-            package='mapping',
-            executable='costmap_node',
-            #prefix=['gdbserver localhost:3000']
-        ),
         ]
     )
