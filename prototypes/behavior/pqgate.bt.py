@@ -86,29 +86,34 @@ class turn90cw(Behaviour):
         
 
 #This behavior is for moving to the currently identified object
-class move_to_io(Behaviour): 
+class move_to_gate(Behaviour): 
     def __init__(self,name):
-        super(move_to_io,self).__init__(name)
+        super(move_to_gate,self).__init__(name)
         
     def setup(self):
-        self.logger.debug(f"move_to_io::setup{self.name}")
+        self.logger.debug(f"move_to_gate::setup{self.name}")
         
     def initialise(self):
-        self.logger.debug(f"move_to_io::initialise{self.name}")
+        self.logger.debug(f"move_to_gate::initialise{self.name}")
 
     def update(self):
-        self.logger.debug("  %s [move_to_io::update()]" % self.name)
-        print("move_to_io")
+        self.logger.debug("  %s [move_to_gate::update()]" % self.name)
+        print("move_to_gate")
         return Status.SUCCESS
     
     def terminate(self, new_status):
-        self.logger.debug("  %s [move_to_io::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
+        self.logger.debug("  %s [move_to_gate::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
+        
+
+        
+
+        
         
 #Defining a condition
 class io_is_gate(Behaviour):
     def __init__(self,name):
         super(io_is_gate,self).__init__(name)
-
+        
     def setup(self):
         self.logger.debug(f"io_is_gate::setup{self.name}")
         
@@ -136,12 +141,12 @@ if __name__ == '__main__':
     forward = move_1m("forward")
     rise = rise_1m("rise")
     fall = fall_1m("fall")
-    move_to = move_to_io("move_to")
+    move_to = move_to_gate("move_to_gate")
     turn90 = turn90cw("turn90")
     
     found_gate = io_is_gate("found_gate")
     
-    move_tosq4 = move_to_io("move_tosq4")
+    move_tosq4 = move_to_gate("move_tosq4")
     forwardsq4 = move_1m("forwardsq4")
     
     sequence4 = Sequence(name = "sequence4", memory = True)
