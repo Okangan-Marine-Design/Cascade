@@ -85,7 +85,7 @@ class turn90cw(Behaviour):
         self.logger.debug("  %s [turn90cw::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
         
 
-#This behavior is for moving to the currently identified object
+#This behavior is for moving to the gate
 class move_to_gate(Behaviour): 
     def __init__(self,name):
         super(move_to_gate,self).__init__(name)
@@ -169,7 +169,7 @@ if __name__ == '__main__':
     turn90sq3 = turn90cw("turn90sq3")
     found_gatesq3 = io_is_gate("found_gatesq3")
     
-    sequence3 = Sequence(name = "sequence2", memory = True)
+    sequence3 = Sequence(name = "sequence3", memory = True)
     sequence3.add_child(risesq3)
     sequence3.add_child(turn90sq3)
     sequence3.add_child(found_gatesq3)
