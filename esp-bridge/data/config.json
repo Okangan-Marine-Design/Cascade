@@ -1,0 +1,15 @@
+{
+  "wifi": {
+    "ssid": "myWifi",
+    "password": "myPassword",
+    "server": {
+      "port": 80
+    }
+  },
+  "espbridge": {
+    "bridge_id": "esp-bridge",
+    "log_level": 6,
+    "bridge_serial_baud": 115200,
+    "bridge_software_version": "0.0.1"
+  }
+}
