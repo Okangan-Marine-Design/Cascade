@@ -3,6 +3,8 @@
 #include <vector>
 #include <ArduinoJson.h>
 #include "SPIFFS.h"
+#include "actuators/motors/motor_setup.h"
+#include "comms/data_receiver.h"
 
 // create global variables for bridge id, software version, and log level
 const char *BRIDGE_ID;
@@ -54,11 +56,11 @@ void setup()
     json[i] = buf.get()[i];
   }
 
-  JsonDocument doc;
-  deserializeJson(doc, json);
+  JsonDocument config;
+  deserializeJson(config, json);
 
   // get bridge id nested value under espbridge: { bridge_id: "1234" }
-  JsonObject bridge = doc["espbridge"];
+  JsonObject bridge = config["espbridge"];
   BRIDGE_ID = bridge["bridge_id"];
 
   // get bridge software version nested value under espbridge: { bridge_software_version: "1.0.0" }
@@ -73,14 +75,19 @@ void setup()
   Log.noticeln("Bridge Software Version: %s", BRIDGE_SOFTWARE_VERSION);
   Log.noticeln("Bridge Log Level: %d", BRIDGE_LOG_LEVEL);
 
+  // setup the motor
+  motor_setup(config);
+
   pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void loop()
 {
-  // put your main code here, to run repeatedly:
-  digitalWrite(2, HIGH);
-  delay(500);
-  digitalWrite(2, LOW);
-  delay(500);
+  // get input from the serial port
+  JsonDocument input = input_comms();
+  // check if there is data
+  if (!input.isNull())
+  {
+    // print input to the serial port for debugging
+  }
 }
