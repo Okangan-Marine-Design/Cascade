@@ -1,11 +1,8 @@
 #include <Arduino.h>
 #include <logging.h>
-#include <sensors/temperature.h>
 #include <vector>
 #include <ArduinoJson.h>
 #include "SPIFFS.h"
-
-TemperatureSensor tempSensor1(2, "temperature_1");
 
 // create global variables for bridge id, software version, and log level
 const char *BRIDGE_ID;
