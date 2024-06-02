@@ -4,7 +4,6 @@ build/
 .cmake
 .make
 CMakeFiles/
-ORB_SLAM3/
 ros2_ws/install/
 install/
 oktech/
@@ -13,5 +12,6 @@ octomap/
 ORBvoc.txt
 ros2_ws/launch/CameraTrajectory.txt
 ros2_ws/launch/KeyFrameTrajectory.txt
+ml_training/
 .log
 

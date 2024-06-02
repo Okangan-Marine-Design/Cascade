@@ -9,20 +9,37 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(cascade_msgs REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(cv_bridge REQUIRED)
 
 add_executable(serial_intake
   src/serial_intake.cpp)
 
-ament_target_dependencies(serial_intake rclcpp std_msgs)
+ament_target_dependencies(serial_intake rclcpp std_msgs cascade_msgs)
 
-add_executable(sensor
-  src/sensor.cpp)
+add_executable(serial_output
+  src/serial_output.cpp)
 
-ament_target_dependencies(sensor rclcpp std_msgs)
+ament_target_dependencies(serial_output rclcpp std_msgs cascade_msgs)
+
+add_executable(json_parser
+  src/json_parser.cpp)
+
+ament_target_dependencies(json_parser rclcpp std_msgs cascade_msgs)
+
+
+add_executable(image_publisher
+  src/image_publisher.cpp)
+
+ament_target_dependencies(image_publisher rclcpp std_msgs sensor_msgs cv_bridge OpenCV cascade_msgs)
 
 install(TARGETS
   serial_intake
-  sensor
+  json_parser
+  image_publisher
+  serial_output
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

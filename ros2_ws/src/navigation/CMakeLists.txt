@@ -7,9 +7,33 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(cascade_msgs REQUIRED)
+
+add_executable(navigator
+  src/navigator.cpp)
+
+add_executable(motion_planner
+  src/motion_planner.cpp)
+
+add_executable(motor_cortex
+  src/motor_cortex.cpp)
+
+ament_target_dependencies(motor_cortex rclcpp std_msgs cascade_msgs tf2 tf2_geometry_msgs)
+ament_target_dependencies(navigator rclcpp std_msgs sensor_msgs cascade_msgs geometry_msgs tf2_geometry_msgs tf2)
+ament_target_dependencies(motion_planner rclcpp std_msgs sensor_msgs cascade_msgs geometry_msgs tf2_geometry_msgs tf2)
+target_include_directories(motion_planner PUBLIC include)
+
+install(TARGETS
+  navigator
+  motion_planner
+  motor_cortex
+  DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

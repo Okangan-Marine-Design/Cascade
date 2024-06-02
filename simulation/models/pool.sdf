@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version="1.6">
+   <model name="pool">
+      <static>true</static>
+      <link name="Lights">
+        <light type="point" name="point_01">
+            <cast_shadows>true</cast_shadows>
+            <pose>0 0 30 0 0 0</pose>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+            <intensity>5</intensity>
+            <attenuation>
+               <range>100</range>
+               <constant>0</constant>
+               <linear>1</linear>
+               <quadratic>0.005</quadratic>
+            </attenuation>
+         </light>
+      </link>
+      <link name="base_link">
+        <visual name="pool">
+            <geometry>
+               <mesh>
+                  <uri>/home/eryk/Desktop/Cascade/simulation/models/pool.dae</uri>
+               </mesh>
+            </geometry>
+        </visual>
+      </link>
+   </model>
+    </sdf>
