@@ -5,11 +5,14 @@
 #include "SPIFFS.h"
 #include "actuators/motors/motor_setup.h"
 #include "comms/data_receiver.h"
+#include <actuators/actuator.h>
 
 // create global variables for bridge id, software version, and log level
 const char *BRIDGE_ID;
 const char *BRIDGE_SOFTWARE_VERSION;
 int BRIDGE_LOG_LEVEL;
+
+JsonDocument config;
 
 void setup()
 {
@@ -56,7 +59,6 @@ void setup()
     json[i] = buf.get()[i];
   }
 
-  JsonDocument config;
   deserializeJson(config, json);
 
   // get bridge id nested value under espbridge: { bridge_id: "1234" }
@@ -75,6 +77,10 @@ void setup()
   Log.noticeln("Bridge Software Version: %s", BRIDGE_SOFTWARE_VERSION);
   Log.noticeln("Bridge Log Level: %d", BRIDGE_LOG_LEVEL);
 
+  int actuator_count = config["actuators"]["thrusters"].size() + config["actuators"]["motors"].size() + config["actuators"]["servos"].size();
+
+  Log.noticeln("Found %d actuators in config", actuator_count);
+
   // setup the motor
   motor_setup(config);
 
@@ -88,6 +94,10 @@ void loop()
   // check if there is data
   if (!input.isNull())
   {
-    // print input to the serial port for debugging
+    digitalWrite(LED_BUILTIN, HIGH);
+    // Parse the input data here
+    control_actuators(input, config);
   }
+
+  digitalWrite(LED_BUILTIN, LOW);
 }

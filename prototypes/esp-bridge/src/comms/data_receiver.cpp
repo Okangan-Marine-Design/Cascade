@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <logging.h>
 
 // create a buffer for the incoming data
 
@@ -16,10 +17,7 @@ JsonDocument input_comms()
         // read the incoming data from the serial port and store it in the buffer
         Serial.readBytesUntil('\n', buffer, sizeof(buffer));
         deserializeJson(doc, buffer);
-
-        // print the incoming data to the serial port
-        serializeJsonPretty(doc, Serial);
-        Serial.println();
+        Log.noticeln("Received data from serial port");
     }
     return doc;
 }

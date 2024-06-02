@@ -19,7 +19,21 @@ void motor_setup(JsonDocument config)
         // get the pin number from the current thruster object
         int pin = thruster["pin"];
         // set the pin mode to output
-        pinMode(pin, OUTPUT);
-        Log.noticeln("Configured thruster %d on pin %d", i, pin);
+
+        // setup ledc channel to output PWM signal to the thruster
+        bool success = ledcSetup(thruster["id"], 50, 16);
+
+        String name = thruster["name"];
+        int id = thruster["id"];
+
+        if (!success)
+        {
+            Log.errorln("Failed to setup LEDC channel for thruster %d", i);
+            return;
+        }
+        else
+        {
+            Log.noticeln("Configured %S on pin %d with id %d", name, pin, id);
+        }
     }
 }

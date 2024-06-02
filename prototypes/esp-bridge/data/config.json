@@ -15,32 +15,36 @@
   "actuators": {
     "thrusters": [
       {
-        "id": "1",
+        "id": 1,
         "name": "Thruster 1",
         "pin": 12,
-        "min_pulse": 1000,
-        "max_pulse": 2000
+        "min_pulse": 1100,
+        "max_pulse": 1900,
+        "dead_zone": 25
       },
       {
-        "id": "2",
+        "id": 2,
         "name": "Thruster 2",
         "pin": 13,
-        "min_pulse": 1000,
-        "max_pulse": 2000
+        "min_pulse": 1100,
+        "max_pulse": 1900,
+        "dead_zone": 25
       },
       {
-        "id": "3",
+        "id": 3,
         "name": "Thruster 3",
         "pin": 14,
-        "min_pulse": 1000,
-        "max_pulse": 2000
+        "min_pulse": 1100,
+        "max_pulse": 1900,
+        "dead_zone": 25
       },
       {
-        "id": "4",
+        "id": 4,
         "name": "Thruster 4",
         "pin": 15,
-        "min_pulse": 1000,
-        "max_pulse": 2000
+        "min_pulse": 1100,
+        "max_pulse": 1900,
+        "dead_zone": 25
       }
     ]
   }
