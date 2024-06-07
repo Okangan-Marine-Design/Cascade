@@ -43,13 +43,11 @@ class MotionPlannerNode : public rclcpp::Node
         void current_pose_callback(geometry_msgs::msg::PoseStamped msg){
             //set current pose
             currentPoseMsg=msg;
-            if(haveGoal){//check if there are any new obstacles from curr pose to current goal
+            if(haveGoal){
                 currentGoalPose=calculatePath();
                 goal_pose_publisher->publish(currentGoalPose);
 
             }
-            //publishVoxelGrid();
-            //figure out why the calculatePath() function kind of freezes now
         }
 
         void goal_status_callback(cascade_msgs::msg::Status msg){
@@ -325,7 +323,7 @@ class MotionPlannerNode : public rclcpp::Node
             else{
                 gpose temp=gpose();
                 temp.copy_orientation=true;
-                temp.pose=currentPoseMsg.pose;//if already at goal or failure to calculate path, then just stay where it is
+                temp.pose=currentEndPoseMsg.pose;//if already at goal or failure to calculate path, then just stay where it is
                 result=temp;
             }
             for(node n: path){

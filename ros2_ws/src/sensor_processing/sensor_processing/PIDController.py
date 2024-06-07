@@ -47,14 +47,8 @@ class PIDNode(Node):
 
         msg=SensorReading()
 
-        # Detect angle wrap-around, should never happen for surge sway heave controllers because the ranges of those are much lower
-        if (actual_msg.data - self.prevMsg.data < -300.0):
-            self.wrap+=1
-        elif (actual_msg.data - self.prevMsg.data > 300.0):
-            self.wrap-=1
-        
         target = target_msg.data
-        actual = (actual_msg.data+self.wrap*360.0)
+        actual = actual_msg.data
         
         error=target-actual
 
