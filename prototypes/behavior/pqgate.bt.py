@@ -85,30 +85,35 @@ class turn90cw(Behaviour):
         self.logger.debug("  %s [turn90cw::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
         
 
-#This behavior is for moving to the currently identified object
-class move_to_io(Behaviour): 
+#This behavior is for moving to the gate
+class move_to_gate(Behaviour): 
     def __init__(self,name):
-        super(move_to_io,self).__init__(name)
+        super(move_to_gate,self).__init__(name)
         
     def setup(self):
-        self.logger.debug(f"move_to_io::setup{self.name}")
+        self.logger.debug(f"move_to_gate::setup{self.name}")
         
     def initialise(self):
-        self.logger.debug(f"move_to_io::initialise{self.name}")
+        self.logger.debug(f"move_to_gate::initialise{self.name}")
 
     def update(self):
-        self.logger.debug("  %s [move_to_io::update()]" % self.name)
-        print("move_to_io")
+        self.logger.debug("  %s [move_to_gate::update()]" % self.name)
+        print("move_to_gate")
         return Status.SUCCESS
     
     def terminate(self, new_status):
-        self.logger.debug("  %s [move_to_io::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
+        self.logger.debug("  %s [move_to_gate::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
+        
+
+        
+
+        
         
 #Defining a condition
 class io_is_gate(Behaviour):
     def __init__(self,name):
         super(io_is_gate,self).__init__(name)
-
+        
     def setup(self):
         self.logger.debug(f"io_is_gate::setup{self.name}")
         
@@ -133,15 +138,7 @@ if __name__ == '__main__':
 
     root = py_trees.composites.Sequence(name = "root", memory = True)
     
-    forward = move_1m("forward")
-    rise = rise_1m("rise")
-    fall = fall_1m("fall")
-    move_to = move_to_io("move_to")
-    turn90 = turn90cw("turn90")
-    
-    found_gate = io_is_gate("found_gate")
-    
-    move_tosq4 = move_to_io("move_tosq4")
+    move_tosq4 = move_to_gate("move_tosq4")
     forwardsq4 = move_1m("forwardsq4")
     
     sequence4 = Sequence(name = "sequence4", memory = True)
@@ -151,22 +148,22 @@ if __name__ == '__main__':
     
     
     fallsq2 = fall_1m("fallsq2")
-    turn90sq2 = turn90cw("turn90sq2")
+    turn90cwsq2 = turn90cw("turn90cwsq2")
     found_gatesq2 = io_is_gate("found_gatesq2")
     
     sequence2 = Sequence(name = "sequence2", memory = True)
     sequence2.add_child(fallsq2)
-    sequence2.add_child(turn90sq2)
+    sequence2.add_child(turn90cwsq2)
     sequence2.add_child(found_gatesq2)
     
     
     risesq3 = fall_1m("risesq3")
-    turn90sq3 = turn90cw("turn90sq3")
+    turn90cwsq3 = turn90cw("turn90sqcw3")
     found_gatesq3 = io_is_gate("found_gatesq3")
     
-    sequence3 = Sequence(name = "sequence2", memory = True)
+    sequence3 = Sequence(name = "sequence3", memory = True)
     sequence3.add_child(risesq3)
-    sequence3.add_child(turn90sq3)
+    sequence3.add_child(turn90cwsq3)
     sequence3.add_child(found_gatesq3)
     
     selector2 = Selector(name = "selector2", memory = True)
