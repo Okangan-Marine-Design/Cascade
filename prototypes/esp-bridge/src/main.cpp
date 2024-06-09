@@ -7,6 +7,7 @@
 #include "comms/data_receiver.h"
 #include <actuators/actuator.h>
 #include <WiFi.h>
+#include <sensors/sensors.h>
 
 // create global variables for bridge id, software version, and log level
 const char *BRIDGE_ID;
@@ -100,13 +101,16 @@ void setup()
 
   // create a wifi connection
 
-  WiFi.softAP(ssid, password);
-  delay(2000);
+  // WiFi.softAP(ssid, password);
+  // delay(2000);
 
   Log.noticeln("IP Address: %s", WiFi.softAPIP().toString().c_str());
 
   // setup the motor
   motor_setup(config);
+
+  // setup the sensors
+  setupSensors(config);
 
   pinMode(LED_BUILTIN, OUTPUT);
 }
@@ -116,12 +120,29 @@ void loop()
   // get input from the serial port
   JsonDocument input = input_comms();
   // check if there is data
+
+  /************************************************
+   *          RUN ACTUATOR CONTROL HERE           *
+   * FIND THE FILE IN /SRC/ACTUATORS/ACTUATOR.CPP *
+   ************************************************/
+
   if (!input.isNull())
   {
+    // blink the led to show that data is being processed
     digitalWrite(LED_BUILTIN, HIGH);
-    // Parse the input data here
+    // Actuators get controlled in this function call
+    // we only run this function if there is data
     control_actuators(input, config);
   }
 
+  /*********************************************
+   *     RUN THE SENSOR READ FUNCTION HERE     *
+   * FIND THE FILE IN /SRC/SENSORS/SENSORS.CPP *
+   *********************************************/
+
+  // read the sensors
+  JsonDocument sensorData = readSensors(config);
+
+  // turn off the led
   digitalWrite(LED_BUILTIN, LOW);
 }

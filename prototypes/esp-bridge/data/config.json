@@ -47,5 +47,14 @@
         "dead_zone": 25
       }
     ]
+  },
+  "sensors": {
+    "temperature_lm35": [
+      {
+        "id": 1,
+        "name": "Temperature Sensor 1",
+        "pin": 36
+      }
+    ]
   }
 }
