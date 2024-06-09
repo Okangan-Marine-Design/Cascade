@@ -55,7 +55,10 @@ void find_object_callback(const std::shared_ptr<cascade_msgs::srv::FindObject::R
         response->pose.position.x=x/total;
         response->pose.position.y=y/total;
         response->pose.position.z=z/total;
+        response->exists=true;
     }
+    else
+        response->exists=false;
 }
 
 void insertArtificialGate(float x, float y, float z, float width, float height){
@@ -161,7 +164,7 @@ bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
 void img_subscription_callback(const cascade_msgs::msg::ImageWithPose &img_msg){
     //possibly add a queue for inserting the depth maps?
     insertDepthImage(img_msg);
-    insertArtificialGate(-5,0,0,2.5,1);
+    insertArtificialGate(-6,0,0,2.5,1);
 }
 
 int main(int argc, char **argv)

@@ -1,3 +1,4 @@
 int32 object_type
 ---
 geometry_msgs/Pose pose
+bool exists
