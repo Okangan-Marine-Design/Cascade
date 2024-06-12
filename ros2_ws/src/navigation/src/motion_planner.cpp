@@ -7,11 +7,13 @@
 #include "cascade_msgs/msg/classes.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "cascade_msgs/srv/status.hpp"
 #include "bonxai/bonxai.hpp"
 #include "bonxai/serialization.hpp"
 #include <tf2/LinearMath/Vector3.h>
 
 using std::placeholders::_1;
+using namespace std::chrono_literals;
 typedef cascade_msgs::msg::GoalPose gpose;
 
 class MotionPlannerNode : public rclcpp::Node
@@ -24,14 +26,17 @@ class MotionPlannerNode : public rclcpp::Node
         end_pose_subscription = this->create_subscription<cascade_msgs::msg::GoalPose>("/end_goal_pose", 10, std::bind(&MotionPlannerNode::end_pose_callback, this, _1));
 
         goal_pose_publisher = this->create_publisher<cascade_msgs::msg::GoalPose>("/current_goal_pose", 10);
-        status_publisher = this->create_publisher<cascade_msgs::msg::Status>("/end_goal_status", 10);
 
-        status_subscription = this->create_subscription<cascade_msgs::msg::Status>("/current_goal_status", 10, std::bind(&MotionPlannerNode::goal_status_callback, this, _1));
         costmap_subscription = this->create_subscription<cascade_msgs::msg::VoxelGrid>("/voxel_grid", 10, std::bind(&MotionPlannerNode::costmap_callback, this, _1));
 
         current_pose_subscription = this->create_subscription<geometry_msgs::msg::PoseStamped>("/pose", 10, std::bind(&MotionPlannerNode::current_pose_callback, this, _1));
 
-        gridPublisher = this->create_publisher<cascade_msgs::msg::VoxelGrid>("/path_grid", 10);
+        gridPublisher = this->create_publisher<cascade_msgs::msg::VoxelGrid>("/path_grid", 10);//voxel grid used specifically for visualization of path
+
+        status_service=this->create_service<cascade_msgs::srv::Status>("motion_planner_status", std::bind(&MotionPlannerNode::status_callback, this, std::placeholders::_1, std::placeholders::_2));
+
+        subNode = rclcpp::Node::make_shared("_motion_planner_client");
+        status_client=subNode->create_client<cascade_msgs::srv::Status>("motor_cortex_status");
     }
     private:
         void end_pose_callback(cascade_msgs::msg::GoalPose msg){
@@ -50,11 +55,42 @@ class MotionPlannerNode : public rclcpp::Node
             }
         }
 
-        void goal_status_callback(cascade_msgs::msg::Status msg){
-            //receives success, in progress, or failure from the motor cortex
-            //if successfully reached its goal, publish next goal pose in the queue
-            if(msg.status==cascade_msgs::msg::Status::SUCCESS){
-            
+        cascade_msgs::srv::Status::Response sendStatusRequest(){            
+            auto request = std::make_shared<cascade_msgs::srv::Status::Request>();
+
+            while (!status_client->wait_for_service(1s)) {
+                if (!rclcpp::ok()) {
+                    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+                }
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
+            }
+
+            auto result = status_client->async_send_request(request);
+            // Wait for the result.
+            if (rclcpp::spin_until_future_complete(subNode, result) ==
+                rclcpp::FutureReturnCode::SUCCESS)
+            {
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got object location");
+            } else {
+                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service find_object");
+            }
+            return *result.get();
+        }
+
+        void status_callback(const std::shared_ptr<cascade_msgs::srv::Status::Request> request,
+                                        std::shared_ptr<cascade_msgs::srv::Status::Response>      response)
+        {
+            auto status = sendStatusRequest();
+            if(status.ongoing==false){
+                response->ongoing=false;
+                response->success=status.success;
+            }
+            else
+                response->ongoing=true;
+
+            if(failedSearch){
+                response->ongoing=false;
+                response->success=false;
             }
         }
 
@@ -166,6 +202,7 @@ class MotionPlannerNode : public rclcpp::Node
 
         std::vector<node> aStarSearch(){
             std::vector<node> result;
+            failedSearch=false;
             auto accessor=costmap.createAccessor();
             //RCLCPP_INFO(this->get_logger(), "starting a*");
             node start,goal;
@@ -181,7 +218,11 @@ class MotionPlannerNode : public rclcpp::Node
 
             std::array<int, 2> *goal_value = accessor.value(costmap.posToCoord(goal.x, goal.y, goal.z)), 
                     *start_value = accessor.value(costmap.posToCoord(start.x, start.y, start.z));
-            if(!isValidNode(goal_value) || !isValidNode(start_value))return result;//if goal is inside an obstacle dont even try
+            if(!isValidNode(goal_value) || !isValidNode(start_value)){
+                failedSearch=true;
+                return result;
+            }
+            //if goal is inside an obstacle dont even try
 
             std::vector<node> surrounding;
             std::unordered_set<node, nodeHash> checked;
@@ -337,7 +378,7 @@ class MotionPlannerNode : public rclcpp::Node
             return result;
         }
 
-        bool loading=false, haveGoal=false, searching=false, newGoal=true;
+        bool loading=false, haveGoal=false, searching=false, newGoal=true, failedSearch=false;
         Bonxai::VoxelGrid<std::array<int,2>> costmap;
         gpose currentGoalPose;
         rclcpp::Publisher<cascade_msgs::msg::VoxelGrid>::SharedPtr gridPublisher;
@@ -346,9 +387,10 @@ class MotionPlannerNode : public rclcpp::Node
         rclcpp::Subscription<cascade_msgs::msg::GoalPose>::SharedPtr end_pose_subscription;
         rclcpp::Subscription<cascade_msgs::msg::VoxelGrid>::SharedPtr costmap_subscription;
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  current_pose_subscription;
-        rclcpp::Subscription<cascade_msgs::msg::Status>::SharedPtr status_subscription;
         rclcpp::Publisher<cascade_msgs::msg::GoalPose>::SharedPtr goal_pose_publisher;
-        rclcpp::Publisher<cascade_msgs::msg::Status>::SharedPtr status_publisher;
+        rclcpp::Service<cascade_msgs::srv::Status>::SharedPtr status_service;
+        std::shared_ptr<rclcpp::Node> subNode;
+        rclcpp::Client<cascade_msgs::srv::Status>::SharedPtr status_client;
 };
 
 int main(int argc, char * argv[])

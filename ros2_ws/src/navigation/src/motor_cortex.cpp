@@ -15,6 +15,7 @@
 #include "geometry_msgs/msg/vector3.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/LinearMath/Matrix3x3.h"
+#include "cascade_msgs/srv/status.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using std::placeholders::_1;
@@ -28,6 +29,9 @@ class MotorCortexNode : public rclcpp::Node
 
             goal_pose_subscription = this->create_subscription<cascade_msgs::msg::GoalPose>("/current_goal_pose", 10, std::bind(&MotorCortexNode::goal_pose_callback, this, _1));
             current_pose_subscription = this->create_subscription<geometry_msgs::msg::PoseStamped>("/pose", 10, std::bind(&MotorCortexNode::current_pose_callback, this, _1));
+            
+            status_service=this->create_service<cascade_msgs::srv::Status>("motor_cortex_status", std::bind(&MotorCortexNode::status_callback, this, std::placeholders::_1, std::placeholders::_2));
+
 
             //adds all publishers to a map
             
@@ -38,7 +42,6 @@ class MotorCortexNode : public rclcpp::Node
             pidPublisherMap.insert(std::pair{"x_translation", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/x_translation/actual", 10)});
             pidPublisherMap.insert(std::pair{"y_translation", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/y_translation/actual", 10)});
             pidPublisherMap.insert(std::pair{"z_translation", this->create_publisher<cascade_msgs::msg::SensorReading>("/PID/z_translation/actual", 10)});
-            status_publisher = this->create_publisher<cascade_msgs::msg::Status>("/current_goal_status", 10);
             timer = this->create_wall_timer(
                 10ms, std::bind(&MotorCortexNode::updateSetPoints, this));
 
@@ -52,6 +55,21 @@ class MotorCortexNode : public rclcpp::Node
         void current_pose_callback(geometry_msgs::msg::PoseStamped msg){
             currentPoseMsg=msg;
         }
+
+        void status_callback(const std::shared_ptr<cascade_msgs::srv::Status::Request> request,
+                                        std::shared_ptr<cascade_msgs::srv::Status::Response>      response)
+        {
+            geometry_msgs::msg::Vector3 relative_translation = calculateRelativeTranslation(currentPoseMsg.pose,currentGoalPoseMsg.pose);
+            float trig_dist = sqrt(relative_translation.x*relative_translation.x + relative_translation.y*relative_translation.y + relative_translation.z*relative_translation.z);
+            //TODO: make trig dist calcualtion into a function
+
+            response->success=false;
+            if(trig_dist<0.2 && abs(yaw_from_pose(currentPoseMsg.pose)-yaw_from_pose(currentGoalPoseMsg.pose))<10) 
+                response->success=true;
+            else 
+                response->ongoing=true;
+        }
+
         float calculateSpeedFromDistance(float dist){//deprecated, now use cascading PID instead
             //how fast do we want to be going based on distance from goal
             //if more than 1.5 meters, 1.5m/s
@@ -187,17 +205,12 @@ class MotorCortexNode : public rclcpp::Node
             pidPublisherMap["zero_translation"]->publish(zeroMsg);
 
             auto message = cascade_msgs::msg::Status();
-            if(trig_dist<0.5)
-                message.status = cascade_msgs::msg::Status::SUCCESS;
-            else
-                message.status = cascade_msgs::msg::Status::ONGOING;
-            status_publisher->publish(message);
         }
         cascade_msgs::msg::GoalPose currentGoalPoseMsg; 
         geometry_msgs::msg::PoseStamped currentPoseMsg;
         rclcpp::Subscription<cascade_msgs::msg::GoalPose>::SharedPtr  goal_pose_subscription;
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  current_pose_subscription;
-        rclcpp::Publisher<cascade_msgs::msg::Status>::SharedPtr status_publisher;
+        rclcpp::Service<cascade_msgs::srv::Status>::SharedPtr status_service;
         rclcpp::TimerBase::SharedPtr timer;
         std::map<std::string, rclcpp::Publisher<cascade_msgs::msg::SensorReading>::SharedPtr> pidPublisherMap;
         float holdYaw=0;

@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from cascade_msgs.msg import MovementCommand
 from cascade_msgs.srv import FindObject
-from cascade_msgs.msg import Status as CascadeStatus 
+from cascade_msgs.srv import Status as CascadeStatus 
 from cascade_msgs.msg import Classes
 import py_trees
 from py_trees.behaviour import Behaviour
@@ -90,8 +90,12 @@ class turn90cw(Behaviour):
 class move_to_gate(Behaviour): 
     def __init__(self, name):
         super(move_to_gate, self).__init__(name)
-        self.node = rclpy.create_node('move_to_gate_node')  # Create a ROS2 node
+        self.node = rclpy.create_node('_move_to_gate_node')  # Create a ROS2 node
         self.publisher = self.node.create_publisher(MovementCommand, 'movement_command', 10)
+        self.client = self.node.create_client(CascadeStatus, '/navigator_status')
+        while not self.client.wait_for_service(timeout_sec=1.0):
+            self.node.get_logger().info('Service /navigator_status not available, waiting again...')
+        self.message_sent = False
 
     def setup(self):
         self.logger.debug(f"move_to_gate::setup{self.name}")
@@ -101,7 +105,30 @@ class move_to_gate(Behaviour):
 
     def update(self):
         self.logger.debug("  %s [move_to_gate::update()]" % self.name)
-        self.publish_movement_command()
+        if not self.message_sent:
+            self.publish_movement_command();
+            self.message_sent = True
+
+        request = CascadeStatus.Request()
+
+        self.future = self.client.call_async(request)
+        rclpy.spin_until_future_complete(self.node, self.future)
+
+        if self.future.result() is not None:
+            response = self.future.result()
+            if response.ongoing:
+                self.publish_movement_command()
+                return Status.RUNNING
+            else:
+                if response.success:
+                    self.message_sent = False
+                    return Status.SUCCESS
+                else:
+                    return Status.FAILURE
+        else:
+            self.logger.debug(f"  %s [move_to_gate::update()] - Service call failed" % self.name)
+            return Status.FAILURE
+
         return Status.SUCCESS
     
     def publish_movement_command(self):
@@ -164,13 +191,6 @@ class found_gate(Behaviour):
 class PlannerNode(Node):
     def __init__(self):
         super().__init__ ("Automated_Planner")
-        self.publisher_ = self.create_publisher(MovementCommand, "/movement_command", 10)
-        self.subscription = self.create_subscription(
-                CascadeStatus,
-                "movement_command_status",
-                self.subscription_callback,
-                10)
-        #start planner loop
     
     def publish(self, msg):
         self.publisher_.publish(msg)

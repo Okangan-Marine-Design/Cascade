@@ -1,0 +1,8 @@
+---
+bool success
+bool ongoing
+
+#if ongoing = true, then its ongoing, regardless of success being true or false
+#if success field only taken into account if ongoing = false
+#in which case success = true means success and success = false means failure
+
