@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version="1.6">
+   <model name="gate">
+      <static>true</static>
+      <link name="base_link">
+        <visual name="gate">
+            <geometry>
+               <mesh>
+                  <uri>/home/eryk/Desktop/Cascade/simulation/models/gate.dae</uri>
+               </mesh>
+            </geometry>
+        </visual>
+      </link>
+   </model>
+    </sdf>

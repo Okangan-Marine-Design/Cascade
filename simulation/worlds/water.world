@@ -52,7 +52,7 @@
 
     <light type="directional" name="sun">
       <cast_shadows>true</cast_shadows>
-      <pose>-10 0 10 0 0 0</pose>
+      <pose>0 0 10 0 0 0</pose>
       <diffuse>1 1 1 1</diffuse>
       <specular>0.5 0.5 0.5 1</specular>
       <attenuation>
@@ -61,12 +61,12 @@
         <linear>0.01</linear>
         <quadratic>0.001</quadratic>
       </attenuation>
-      <direction>-0.5 0.1 -0.9</direction>
+      <direction>0.2 0.1 -0.9</direction>
     </light>
     
     <model name="wall">
         <static>true</static>
-      <pose>10 0 0 0 0 1.5708</pose>
+      <pose>-10 0 0 0 0 1.5708</pose>
       <link name="wall_link">
         <inertial>
           <inertia>
@@ -104,6 +104,10 @@
     <include>
         <pose>0 0 -1 0 0 0</pose>
         <uri> /home/eryk/Desktop/Cascade/simulation/models/pool.sdf </uri>
+    </include>
+    <include>
+        <pose>6 0 -1 0 0 0</pose>
+        <uri> /home/eryk/Desktop/Cascade/simulation/models/gate.sdf </uri>
     </include>
     <include>
       <pose>0 0 0 0 0 0</pose>
