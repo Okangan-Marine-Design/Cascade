@@ -68,6 +68,42 @@ class turn45ccw(Behaviour):
     def terminate(self, new_status):
         self.logger.debug("  %s [turn45ccw::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
         
+class turn90cw(Behaviour): 
+    def __init__(self,name):
+        super(turn90cw,self).__init__(name)
+        
+    def setup(self):
+        self.logger.debug(f"turn90cw::setup{self.name}")
+        
+    def initialise(self):
+        self.logger.debug(f"turn90cw::initialise{self.name}")
+
+    def update(self):
+        self.logger.debug("  %s [turn90cw::update()]" % self.name)
+        print("command turn 90 clockwise")
+        return Status.SUCCESS
+    
+    def terminate(self, new_status):
+        self.logger.debug("  %s [turn90cw::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
+        
+class turn90ccw(Behaviour): 
+    def __init__(self,name):
+        super(turn90ccw,self).__init__(name)
+        
+    def setup(self):
+        self.logger.debug(f"turn90ccw::setup{self.name}")
+        
+    def initialise(self):
+        self.logger.debug(f"turn90ccw::initialise{self.name}")
+
+    def update(self):
+        self.logger.debug("  %s [turn90ccw::update()]" % self.name)
+        print("command turn 90 counter-clockwise")
+        return Status.SUCCESS
+    
+    def terminate(self, new_status):
+        self.logger.debug("  %s [turn90ccw::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
+        
 
 #This behavior is for moving to the currently identified object
 class move_to_pole(Behaviour): 
@@ -117,11 +153,11 @@ if __name__ == '__main__':
     root = py_trees.composites.Sequence(name = "root", memory = True)
     
     forwardsq8 = move_1m("forwardsq8")
-    turn45ccwsq8 = turn45ccw("turn45ccwsq8")
+    turn90ccwsq8 = turn90ccw("turn90ccwsq8")
     
     sequence8 = Sequence(name = "sequence8", memory = True)
     sequence8.add_child(forwardsq8)
-    sequence8.add_child(turn45ccwsq8)
+    sequence8.add_child(turn90ccwsq8)
     
     decorator3 = Repeat(name = "decorator3", child = sequence8, num_success = 4)
     
