@@ -66,6 +66,7 @@ def generate_launch_description():
         Node(
             package='mission_planning',
             executable='planner',
+            output='screen'
         ),
         Node(
             package='navigation',

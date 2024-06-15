@@ -64,13 +64,13 @@ void find_object_callback(const std::shared_ptr<cascade_msgs::srv::FindObject::R
 void insertArtificialGate(float x, float y, float z, float width, float height){
     auto accessor = grid.createAccessor();
     for(float i=-width;i<width;i+=grid.resolution*0.8){
-        Bonxai::CoordT coord = grid.posToCoord(x, y+i, z-height);
+        Bonxai::CoordT coord = grid.posToCoord(x, y+i, -z-height);
         accessor.setValue(coord, {cascade_msgs::msg::Classes::GATE,100});
     }
     for(float j=-height;j<height;j+=grid.resolution*0.8){
-        Bonxai::CoordT coord = grid.posToCoord(x, y+width, z+j);
+        Bonxai::CoordT coord = grid.posToCoord(x, y+width, -z+j);
         accessor.setValue(coord, {cascade_msgs::msg::Classes::GATE,100});
-        coord = grid.posToCoord(x, y-width, z+j);
+        coord = grid.posToCoord(x, y-width, -z+j);
         accessor.setValue(coord, {cascade_msgs::msg::Classes::GATE,100});
     }
 }
@@ -164,7 +164,7 @@ bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
 void img_subscription_callback(const cascade_msgs::msg::ImageWithPose &img_msg){
     //possibly add a queue for inserting the depth maps?
     insertDepthImage(img_msg);
-    insertArtificialGate(-6,0,0,2.5,1);
+    insertArtificialGate(6,0,0,2.5,1);
 }
 
 int main(int argc, char **argv)

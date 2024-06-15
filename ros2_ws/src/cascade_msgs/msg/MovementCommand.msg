@@ -11,3 +11,4 @@ int32 MOVE_RELATIVE = 1
     #does a movement relative to the sub, ex. move 5m forward, rotate 90 degrees cw, etc
     #data0 is for translation (x, y, z)
     #data1 is for rotation (r, p, y) in degrees NOT radians
+
