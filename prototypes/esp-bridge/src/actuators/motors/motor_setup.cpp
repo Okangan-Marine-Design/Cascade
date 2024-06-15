@@ -16,19 +16,26 @@ void motor_setup(JsonDocument config)
     {
         // index the thruster array to get the current thruster object
         JsonObject thruster = thrusters[i];
-        // get the pin number from the current thruster object
-        int pin = thruster["pin"];
-        // set the pin mode to output
-
-        // setup ledc channel to output PWM signal to the thruster
-        bool success = ledcSetup(thruster["id"], 50, 16);
-
         String name = thruster["name"];
         int id = thruster["id"];
+        int pin = thruster["pin"];
 
+        bool success = ledcSetup(1, 50, 16);
+        ledcAttachPin(pin, id);
+
+        // determine midpoints for the thruster
+        int max_pulse = thruster["max_pulse"];
+        int min_pulse = thruster["min_pulse"];
+
+        int zero_pulse = (max_pulse + min_pulse) / 2;
+        // Don't ask me how this works it's completely magic and nobody understands why it works
+        int magic_pulse = map(zero_pulse, 1000, 2000, 3275, 6553);
+        ledcWrite(id, magic_pulse);
+
+        // setup ledc channel to output PWM signal to the thruster
         if (!success)
         {
-            Log.errorln("Failed to setup LEDC channel for thruster %d", i);
+            Log.errorln("Failed to setup LEDC channel for thruster %d", id);
             return;
         }
         else

@@ -128,6 +128,7 @@ void loop()
 
   if (!input.isNull())
   {
+    Log.infoln("Processing data");
     // blink the led to show that data is being processed
     digitalWrite(LED_BUILTIN, HIGH);
     // Actuators get controlled in this function call
@@ -141,7 +142,8 @@ void loop()
    *********************************************/
 
   // read the sensors
-  JsonDocument sensorData = readSensors(config);
+  // JsonDocument sensorData = readSensors(config);
+  // serializeJson(sensorData, Serial);
 
   // turn off the led
   digitalWrite(LED_BUILTIN, LOW);
