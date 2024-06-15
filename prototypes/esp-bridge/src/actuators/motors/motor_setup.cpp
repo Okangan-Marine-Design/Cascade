@@ -20,7 +20,7 @@ void motor_setup(JsonDocument config)
         int id = thruster["id"];
         int pin = thruster["pin"];
 
-        bool success = ledcSetup(1, 50, 16);
+        bool success = ledcSetup(id, 50, 16);
         ledcAttachPin(pin, id);
 
         // determine midpoints for the thruster

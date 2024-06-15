@@ -21,6 +21,14 @@
         "min_pulse": 1100,
         "max_pulse": 1900,
         "dead_zone": 25
+      },
+      {
+        "id": 2,
+        "name": "Thruster 2",
+        "pin": 15,
+        "min_pulse": 1100,
+        "max_pulse": 1900,
+        "dead_zone": 25
       }
     ]
   },
