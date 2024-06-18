@@ -11,6 +11,7 @@
 #include "bonxai/bonxai.hpp"
 #include "bonxai/serialization.hpp"
 #include <tf2/LinearMath/Vector3.h>
+#include "voxelData.hpp"
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;
@@ -112,7 +113,7 @@ class MotionPlannerNode : public rclcpp::Node
             char header[256];
             ifile.getline(header, 256);
             Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
-            auto g=Bonxai::Deserialize<std::array<int,2>>(ifile, info);
+            auto g=Bonxai::Deserialize<voxelData>(ifile, info);
             costmap=std::move(g);
             loading=false;
             inserted=true;
@@ -175,13 +176,13 @@ class MotionPlannerNode : public rclcpp::Node
             gridPublisher->publish(gridMsg);
         }
 
-        bool isValidNode(std::array<int,2>* pointer){
+        bool isValidNode(voxelData* pointer){
             if(pointer==nullptr)return true;
             //if((*pointer)[0]==cascade_msgs::msg::Classes::INFLATED)return false;//node is valid to be travelled to if its part of the costmap or if its empty
             return false;
         }
 
-        bool isDangerousNode(node n, Bonxai::VoxelGrid<std::array<int,2>>::Accessor accessor){
+        bool isDangerousNode(node n, Bonxai::VoxelGrid<voxelData>::Accessor accessor){
             float radius=0.6;
             for(float x=n.x-radius;x<n.x+radius;x+=2*costmap.resolution){
                 for(float y=n.y-radius;y<n.y+radius;y+=2*costmap.resolution){
@@ -216,7 +217,7 @@ class MotionPlannerNode : public rclcpp::Node
             goal.y = currentEndPoseMsg.pose.position.y;
             goal.z = -currentEndPoseMsg.pose.position.z;//why does this need to be negative i have no clue
 
-            std::array<int, 2> *goal_value = accessor.value(costmap.posToCoord(goal.x, goal.y, goal.z)), 
+            voxelData *goal_value = accessor.value(costmap.posToCoord(goal.x, goal.y, goal.z)), 
                     *start_value = accessor.value(costmap.posToCoord(start.x, start.y, start.z));
             if(!isValidNode(goal_value) || !isValidNode(start_value)){
                 failedSearch=true;
@@ -258,7 +259,7 @@ class MotionPlannerNode : public rclcpp::Node
                             tempNode.y=current.y+y*costmap.resolution*0.95;
                             tempNode.z=current.z+z*costmap.resolution*0.95;
                             Bonxai::CoordT coord = costmap.posToCoord(tempNode.x, tempNode.y, tempNode.z);
-                            std::array<int, 2>* value_ptr = accessor.value( coord );
+                            voxelData* value_ptr = accessor.value( coord );
                             if(isValidNode(value_ptr)){
                                 if(checked.count(tempNode)>0){
                                     tempNode=*checked.find(tempNode);
@@ -379,7 +380,7 @@ class MotionPlannerNode : public rclcpp::Node
         }
 
         bool loading=false, haveGoal=false, searching=false, newGoal=true, failedSearch=false;
-        Bonxai::VoxelGrid<std::array<int,2>> costmap;
+        Bonxai::VoxelGrid<voxelData> costmap;
         gpose currentGoalPose;
         rclcpp::Publisher<cascade_msgs::msg::VoxelGrid>::SharedPtr gridPublisher;
         geometry_msgs::msg::PoseStamped currentPoseMsg;

@@ -14,6 +14,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include "bonxai/bonxai.hpp"
 #include "bonxai/serialization.hpp"
+#include "voxelData.hpp"
 #include <sstream>
 
 using namespace std;
@@ -27,7 +28,7 @@ rclcpp::Publisher<cascade_msgs::msg::VoxelGrid>::SharedPtr gridPublisher;
 bool inserting=false;
 
 double voxel_resolution = 0.15;
-Bonxai::VoxelGrid<std::array<int, 2>> grid( voxel_resolution );
+Bonxai::VoxelGrid<voxelData> grid( voxel_resolution );
 
 
 float depth_to_meters(float d){
@@ -41,8 +42,8 @@ void find_object_callback(const std::shared_ptr<cascade_msgs::srv::FindObject::R
     float x,y,z;
     x=y=z=0;
     int total=0;
-    auto voxel_lambda = [&x,&y,&z,&accessor, &grid, &total, &request](const std::array<int,2>& data, const Bonxai::CoordT& coord) {
-        if(data[0]==request->object_type){
+    auto voxel_lambda = [&x,&y,&z,&accessor, &grid, &total, &request](const voxelData& data, const Bonxai::CoordT& coord) {
+        if(data.class_id==request->object_type){
             Bonxai::Point3D pos = grid.coordToPos(coord);
             x+=pos.x;
             y+=pos.y;
@@ -88,11 +89,26 @@ void publishVoxelGrid(){
     gridPublisher->publish(gridMsg);
 }
 
+void decayAllVoxels(){//finish this
+            auto accessor= grid.createAccessor();
+            auto lambda = [&accessor](const voxelData& data, const Bonxai::CoordT& coord) {
+                if(accessor.value(coord)==nullptr)return;
+                if(data.confidence<30){
+                    accessor.setCellOff(coord);
+                    return;
+                }
+                accessor.setValue(coord, {data.class_id,data.confidence*0.997});//decay TODO: turn into a parameter
+            };
+            grid.forEachCell(lambda);
+        }
 
 bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
     auto accessor = grid.createAccessor();
     if (inserting) return false; // Return fail to insert
     inserting = true; // Making sure we don't insert multiple depth scans at once
+
+    decayAllVoxels();
+
     cv::Mat depth_img = cv_bridge::toCvCopy(img.image)->image;
     int w = depth_img.cols;
     int h = depth_img.rows;
@@ -146,13 +162,13 @@ bool insertDepthImage(const cascade_msgs::msg::ImageWithPose img) {
 
                 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
                 if(accessor.value(coord)!=nullptr){//if there is somethign already in the current voxel
-                    if(confidence >= (*accessor.value(coord))[1])//only change the class if we are more confident in the new recognition
+                    if(confidence >= (*accessor.value(coord)).confidence)//only change the class if we are more confident in the new recognition
                         accessor.setValue(coord, {class_id,confidence}); // Set voxel value to class ID
                     else
-                        accessor.setValue(coord, {(*accessor.value(coord))[0],(*accessor.value(coord))[1]*.9});//if we detect a lower cionfidence or a differnt class, start decaying the confidence value of the current voxel
+                        accessor.setValue(coord, {(*accessor.value(coord)).class_id,(*accessor.value(coord)).confidence*.9});//if we detect a lower cionfidence or a differnt class, start decaying the confidence value of the current voxel
                 }
                 else
-                    accessor.setValue(coord, {class_id,confidence});//if there isnt anything in current voxel, insert the detected class and confidence
+                    accessor.setValue(coord, {class_id,100.0});//if there isnt anything in current voxel, insert the detected class and confidence
             }
         }  
     }

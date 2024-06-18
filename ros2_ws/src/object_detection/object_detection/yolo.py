@@ -17,7 +17,7 @@ class YoloNode(image_node.ImageNode):
         # Insert YOLO inferencing code here
         # The boundingBoxes should be a list of dictionaries containing 'class_id', 'confidence', 'x', 'y', 'w', 'h'
         boundingBoxes = [
-            {'class_id': 0, 'confidence': 100, 'x': 50, 'y': 50, 'w': 100, 'h': 150},
+            {'class_id': 0, 'confidence': 100, 'x': 0, 'y': 0, 'w': 480, 'h': 360},
         ]#fake testing data
         return boundingBoxes
 

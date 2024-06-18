@@ -7,11 +7,12 @@
 #include "rclcpp/rclcpp.hpp"
 #include "cascade_msgs/msg/voxel_grid.hpp"
 #include "cascade_msgs/msg/classes.hpp"
+#include "voxelData.hpp"
 #include <sstream>
 #include <vector>
 
 float voxel_resolution=0.05;//update this to adapt to the grid
-Bonxai::VoxelGrid<std::array<int, 2>> grid = Bonxai::VoxelGrid<std::array<int, 2>>(voxel_resolution);
+Bonxai::VoxelGrid<voxelData> grid = Bonxai::VoxelGrid<voxelData>(voxel_resolution);
 std::shared_ptr<rclcpp::Node> node;
 
 // Camera variables
@@ -60,11 +61,10 @@ if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
     }
 
 // Function to draw a single voxel
-void drawVoxel(float x, float y, float z, float size, std::array<int,2> data) {
+void drawVoxel(float x, float y, float z, float size, voxelData data) {
     float r=0,g=0,b=0,a;
-    a=(float)data[1]/100.0;
-    a=1.0;
-    switch(data[0]){//change class to be integer instead of float
+    a=data.confidence/100.0;
+    switch(data.class_id){//change class to be integer instead of float
         case cascade_msgs::msg::Classes::OBSTACLE:
             r=0.0;
             g=1.0;
@@ -174,7 +174,7 @@ void drawVoxel(float x, float y, float z, float size, std::array<int,2> data) {
 }
 
 // Function to render the voxel grid
-void renderVoxel(const std::array<int,2 >& data, const Bonxai::CoordT& coord){
+void renderVoxel(const voxelData& data, const Bonxai::CoordT& coord){
     Bonxai::Point3D pos = grid.coordToPos(coord);
     drawVoxel(pos.y,pos.z,pos.x,grid.resolution,data);
 }
@@ -274,7 +274,7 @@ void updateGridFromMsg(const cascade_msgs::msg::VoxelGrid &msg){
     char header[256];
     ifile.getline(header, 256);
     Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
-    auto g = Bonxai::Deserialize<std::array<int, 2>>(ifile, info);
+    auto g = Bonxai::Deserialize<voxelData>(ifile, info);
     grid=std::move(g);
     loading=false;
 }
@@ -292,7 +292,7 @@ void updateGridFromFile(std::string inputFileName){
         Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
 
         // Deserialize the voxel grid from the file
-        auto g = Bonxai::Deserialize<std::array<int,2>>(inputFile, info);
+        auto g = Bonxai::Deserialize<voxelData>(inputFile, info);
         inputFile.close();
         grid=std::move(g);
     }
