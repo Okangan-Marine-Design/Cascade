@@ -25,22 +25,6 @@
       {
         "id": 2,
         "name": "Thruster 2",
-        "pin": 13,
-        "min_pulse": 1100,
-        "max_pulse": 1900,
-        "dead_zone": 25
-      },
-      {
-        "id": 3,
-        "name": "Thruster 3",
-        "pin": 14,
-        "min_pulse": 1100,
-        "max_pulse": 1900,
-        "dead_zone": 25
-      },
-      {
-        "id": 4,
-        "name": "Thruster 4",
         "pin": 15,
         "min_pulse": 1100,
         "max_pulse": 1900,
@@ -54,6 +38,13 @@
         "id": 1,
         "name": "Temperature Sensor 1",
         "pin": 36
+      }
+    ],
+    "kill_switch": [
+      {
+        "id": 1,
+        "name": "Kill Switch 1",
+        "pin": 9
       }
     ]
   }

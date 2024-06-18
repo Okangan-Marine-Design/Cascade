@@ -67,6 +67,42 @@ class turn45ccw(Behaviour):
     def terminate(self, new_status):
         self.logger.debug("  %s [turn45ccw::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
         
+class turn90cw(Behaviour): 
+    def __init__(self,name):
+        super(turn90cw,self).__init__(name)
+        
+    def setup(self):
+        self.logger.debug(f"turn90cw::setup{self.name}")
+        
+    def initialise(self):
+        self.logger.debug(f"turn90cw::initialise{self.name}")
+
+    def update(self):
+        self.logger.debug("  %s [turn90cw::update()]" % self.name)
+        print("command turn 90 clockwise")
+        return Status.SUCCESS
+    
+    def terminate(self, new_status):
+        self.logger.debug("  %s [turn90cw::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
+        
+class turn90ccw(Behaviour): 
+    def __init__(self,name):
+        super(turn90ccw,self).__init__(name)
+        
+    def setup(self):
+        self.logger.debug(f"turn90ccw::setup{self.name}")
+        
+    def initialise(self):
+        self.logger.debug(f"turn90ccw::initialise{self.name}")
+
+    def update(self):
+        self.logger.debug("  %s [turn90ccw::update()]" % self.name)
+        print("command turn 90 counter-clockwise")
+        return Status.SUCCESS
+    
+    def terminate(self, new_status):
+        self.logger.debug("  %s [turn90ccw::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
+        
 #This behavior is for moving to the currently identified object
 class move_to_buoy(Behaviour): 
     def __init__(self,name):
@@ -115,11 +151,11 @@ if __name__ == '__main__':
     root = py_trees.composites.Sequence(name = "root", memory = True)
     
     forwardsq12 = move_1m("forwardsq12")
-    turn45ccwsq12 = turn45ccw("turn45ccwsq12")
+    turn90ccwsq12 = turn90ccw("turn90ccwsq12")
     
     sequence12 = Sequence(name = "sequence12", memory = True)
     sequence12.add_child(forwardsq12)
-    sequence12.add_child(turn45ccwsq12)
+    sequence12.add_child(turn90ccwsq12)
     
     decorator5 = Repeat(name = "decorator5", child = sequence12, num_success = 4)
     

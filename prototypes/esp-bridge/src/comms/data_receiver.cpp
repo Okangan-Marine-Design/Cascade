@@ -6,18 +6,28 @@
 
 JsonDocument input_comms()
 {
-    // read the incoming data from the serial port and store it in the buffer
-    // we only want to read the data if it is available
-    // we don't want to block the program if there is no data available
-    char buffer[2048];
-    JsonDocument doc;
+    // get the time this function takes
+    unsigned long start = millis();
+    static StaticJsonDocument<256> json_doc;
 
-    if (Serial.available() > 0)
+    const auto deser_err = deserializeJson(json_doc, Serial);
+    if (deser_err)
     {
-        // read the incoming data from the serial port and store it in the buffer
-        Serial.readBytesUntil('\n', buffer, sizeof(buffer));
-        deserializeJson(doc, buffer);
-        Log.noticeln("Received data from serial port");
+        Serial.print(F("Failed to deserialize, reason: \""));
+        Serial.print(deser_err.c_str());
+        Serial.println('"');
     }
-    return doc;
+    else
+    {
+        Serial.print(F("Recevied valid json document with "));
+        Serial.print(json_doc.size());
+        Serial.println(F(" elements."));
+        Serial.println(F("Pretty printed back at you:"));
+        serializeJsonPretty(json_doc, Serial);
+        Serial.println();
+    }
+    unsigned long delta = millis() - start;
+    Serial.print(F("Time taken to process incoming data: "));
+
+    return json_doc;
 }
