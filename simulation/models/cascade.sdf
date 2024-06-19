@@ -80,6 +80,24 @@
           <visualize>true</visualize>
           <topic>/sensors/camera/rgb</topic>
         </sensor>
+            
+        <sensor name="imu_sensor" type="imu">
+            <update_rate>1000</update_rate>
+            <topic>/sensors/imu</topic>
+            <imu>
+                <angular_velocity>
+                    <x>true</x>
+                    <y>true</y>
+                    <z>true</z>
+                </angular_velocity>
+                <linear_acceleration>
+                    <x>true</x>
+                    <y>true</y>
+                    <z>true</z>
+                </linear_acceleration>
+                <frame>camera_link</frame>
+            </imu>
+        </sensor>
     </link>
 
     <joint name="camera_joint" type="fixed">

@@ -56,7 +56,7 @@ class MotionPlannerNode : public rclcpp::Node
             }
         }
 
-        cascade_msgs::srv::Status::Response sendStatusRequest(){            
+        cascade_msgs::srv::Status::Response sendStatusRequest(){  //TODO: fix names          
             auto request = std::make_shared<cascade_msgs::srv::Status::Request>();
 
             while (!status_client->wait_for_service(1s)) {
@@ -71,7 +71,7 @@ class MotionPlannerNode : public rclcpp::Node
             if (rclcpp::spin_until_future_complete(subNode, result) ==
                 rclcpp::FutureReturnCode::SUCCESS)
             {
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got object location");
+                //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got object location");
             } else {
                 RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service find_object");
             }

@@ -120,7 +120,7 @@ class NavigatorNode : public rclcpp::Node
             if (rclcpp::spin_until_future_complete(subNode, result) ==
                 rclcpp::FutureReturnCode::SUCCESS)
             {
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got object location");
+                //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got object location");
             } else {
                 RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service find_object");
             }
@@ -142,7 +142,7 @@ class NavigatorNode : public rclcpp::Node
             if (rclcpp::spin_until_future_complete(subNode, result) ==
                 rclcpp::FutureReturnCode::SUCCESS)
             {
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got object location");
+                //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "got object location");
             } else {
                 RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service find_object");
             }

@@ -12,112 +12,39 @@ from py_trees.composites import Selector
 from py_trees.decorators import Retry
 from py_trees.decorators import Repeat
 from py_trees import display  
+from geometry_msgs.msg import Vector3
 
-class move_1m(Behaviour): 
-    def __init__(self,name):
-        super(move_1m,self).__init__(name)
-        
-    def setup(self):
-        self.logger.debug(f"move_1m::setup{self.name}")
-        
-    def initialise(self):
-        self.logger.debug(f"move_1m::initialise{self.name}")
 
-    def update(self):
-        self.logger.debug("  %s [move_1m::update()]" % self.name)
-        print("command 1m_forward")
-        return Status.SUCCESS
-    
-    def terminate(self, new_status):
-        self.logger.debug("  %s [move_1m::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
-        
-class rise_1m(Behaviour): 
-    def __init__(self,name):
-        super(rise_1m,self).__init__(name)
-        
-    def setup(self):
-        self.logger.debug(f"rise_1m::setup{self.name}")
-        
-    def initialise(self):
-        self.logger.debug(f"rise_1m::initialise{self.name}")
-
-    def update(self):
-        self.logger.debug("  %s [rise_1m::update()]" % self.name)
-        print("command 1m_rise")
-        return Status.SUCCESS
-    
-    def terminate(self, new_status):
-        self.logger.debug("  %s [rise_1m::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
-        
-class fall_1m(Behaviour): 
-    def __init__(self,name):
-        super(fall_1m,self).__init__(name)
-        
-    def setup(self):
-        self.logger.debug(f"fall_1m::setup{self.name}")
-        
-    def initialise(self):
-        self.logger.debug(f"fall_1m::initialise{self.name}")
-
-    def update(self):
-        self.logger.debug("  %s [fall_1m::update()]" % self.name)
-        print("command 1m_fall")
-        return Status.SUCCESS
-    
-    def terminate(self, new_status):
-        self.logger.debug("  %s [fall_1m::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
-        
-class turn90cw(Behaviour): 
-    def __init__(self,name):
-        super(turn90cw,self).__init__(name)
-        
-    def setup(self):
-        self.logger.debug(f"turn90cw::setup{self.name}")
-        
-    def initialise(self):
-        self.logger.debug(f"turn90cw::initialise{self.name}")
-
-    def update(self):
-        self.logger.debug("  %s [turn90cw::update()]" % self.name)
-        print("command turn 90 clockwise")
-        return Status.SUCCESS
-    
-    def terminate(self, new_status):
-        self.logger.debug("  %s [turn90cw::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
-        
-
-#This behavior is for moving to the gate
-class move_to_gate(Behaviour): 
-    def __init__(self, name):
-        super(move_to_gate, self).__init__(name)
-        self.node = rclpy.create_node('_move_to_gate_node')  # Create a ROS2 node
+class MovementBehaviour(Behaviour):
+    def __init__(self, name, command):
+        super(MovementBehaviour, self).__init__(name)
+        self.node = rclpy.create_node(f'_{name}_node')
         self.publisher = self.node.create_publisher(MovementCommand, 'movement_command', 10)
         self.client = self.node.create_client(CascadeStatus, '/navigator_status')
         while not self.client.wait_for_service(timeout_sec=1.0):
-            self.node.get_logger().info('Service /navigator_status not available, waiting again...')
+            self.node.get_logger().info(f'Service /navigator_status not available, waiting again for {name}...')
         self.message_sent = False
+        self.command = command
 
     def setup(self):
-        self.logger.debug(f"move_to_gate::setup{self.name}")
+        self.logger.debug(f"{self.name}::setup")
 
     def initialise(self):
-        self.logger.debug(f"move_to_gate::initialise{self.name}")
+        self.logger.debug(f"{self.name}::initialise")
 
     def update(self):
-        self.logger.debug("  %s [move_to_gate::update()]" % self.name)
+        self.logger.debug(f"  {self.name} [update()]")
         if not self.message_sent:
-            self.publish_movement_command();
+            self.publish_movement_command()
             self.message_sent = True
 
         request = CascadeStatus.Request()
-
         self.future = self.client.call_async(request)
         rclpy.spin_until_future_complete(self.node, self.future)
 
         if self.future.result() is not None:
             response = self.future.result()
             if response.ongoing:
-                self.publish_movement_command()
                 return Status.RUNNING
             else:
                 if response.success:
@@ -126,22 +53,69 @@ class move_to_gate(Behaviour):
                 else:
                     return Status.FAILURE
         else:
-            self.logger.debug(f"  %s [move_to_gate::update()] - Service call failed" % self.name)
+            self.logger.debug(f"  {self.name} [update()] - Service call failed")
             return Status.FAILURE
 
-        return Status.SUCCESS
-    
     def publish_movement_command(self):
         msg = MovementCommand()
-        msg.command = MovementCommand.GO_TO_GATE  # Set the command field
+        msg.command = self.command
+        msg.header.stamp = self.node.get_clock().now().to_msg()
+        self.set_command_data(msg)
         self.publisher.publish(msg)
-        self.logger.debug(f"Published MovementCommand with command: {MovementCommand.GO_TO_GATE}")
+        self.logger.debug(f"Published MovementCommand with command: {self.command}")
+
+    def set_command_data(self, msg):
+        raise NotImplementedError
 
     def terminate(self, new_status):
-        self.logger.debug("  %s [move_to_gate::terminate().terminate()][%s->%s]" % (self.name, self.status, new_status))
+        self.logger.debug(f"  {self.name} [terminate()][{self.status}->{new_status}]")
 
     def shutdown(self):
-        self.node.destroy_node()        
+        self.node.destroy_node()
+
+
+class move_1m(MovementBehaviour):
+    def __init__(self, name):
+        super(move_1m, self).__init__(name, MovementCommand.MOVE_RELATIVE)
+    
+    def set_command_data(self, msg):
+        msg.data0 = Vector3(x=1.0, y=0.0, z=0.0)  # Move forward by 1 meter
+        msg.data1 = Vector3(x=0.0, y=0.0, z=0.0)  # No rotation
+
+
+class rise_1m(MovementBehaviour):
+    def __init__(self, name):
+        super(rise_1m, self).__init__(name, MovementCommand.MOVE_RELATIVE)
+    
+    def set_command_data(self, msg):
+        msg.data0 = Vector3(x=0.0, y=0.0, z=1.0)  # Rise by 1 meter
+        msg.data1 = Vector3(x=0.0, y=0.0, z=0.0)  # No rotation
+
+
+class fall_1m(MovementBehaviour):
+    def __init__(self, name):
+        super(fall_1m, self).__init__(name, MovementCommand.MOVE_RELATIVE)
+    
+    def set_command_data(self, msg):
+        msg.data0 = Vector3(x=0.0, y=0.0, z=-1.0)  # Fall by 1 meter
+        msg.data1 = Vector3(x=0.0, y=0.0, z=0.0)  # No rotation
+
+
+class turn90cw(MovementBehaviour):
+    def __init__(self, name):
+        super(turn90cw, self).__init__(name, MovementCommand.MOVE_RELATIVE)
+    
+    def set_command_data(self, msg):
+        msg.data0 = Vector3(x=0.0, y=0.0, z=0.0)  # No linear movement
+        msg.data1 = Vector3(x=0.0, y=0.0, z=90.0)  # Turn 90 degrees clockwise
+
+
+class move_to_gate(MovementBehaviour):
+    def __init__(self, name):
+        super(move_to_gate, self).__init__(name, MovementCommand.GO_TO_GATE)
+    
+    def set_command_data(self, msg):
+        msg.data0 = Vector3(x=1.0, y=0.0, z=0.0)  # Example data for stopping distance
 
 #Defining a condition
 class found_gate(Behaviour):
@@ -216,8 +190,8 @@ def main(args=None):
     found_gatesq2 = found_gate("found_gatesq2")
     
     sequence2 = Sequence(name = "sequence2", memory = True)
-    sequence2.add_child(fallsq2)
     sequence2.add_child(turn90cwsq2)
+    sequence2.add_child(fallsq2)
     sequence2.add_child(found_gatesq2)
     
     
@@ -260,6 +234,7 @@ def main(args=None):
 
     def print_tree(tree):
         node.get_logger().info(py_trees.display.unicode_tree(root=tree.root, show_status=True))
+        pass
 
     while(rclpy.ok()):
         rclpy.spin_once(node, timeout_sec=0.1)
