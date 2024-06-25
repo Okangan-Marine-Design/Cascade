@@ -5,23 +5,65 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import numpy as np
+import torch
+from pathlib import Path
+from utils.common import DetectMultiBackend
+from utils.general import non_max_suppression, scale_boxes
+from utils.torch_utils import select_device
 
 class YoloNode(image_node.ImageNode):
     def __init__(self):
-        super().__init__(sub_topic="/sensors/camera/rgb",  pub_topic="/labeled_image", name="yolo")
+        super().__init__(sub_topic="/sensors/camera/rgb", pub_topic="/labeled_image", name="yolo")
         self.bridge = CvBridge()
-        # Initialize your YOLO model here
+        
+        # Initialize YOLO model
+        weights = 'best.pt'  # Path to your model weights
+        device = select_device('')  # Select device, '' means auto (CPU or CUDA)
+        self.model = DetectMultiBackend(weights, device=device)
+        self.model.warmup(imgsz=(1, 3, 320, 320))  # Adjust the size as per your model
+        self.names = self.model.names
 
     def inference(self, image):
-        boundingBoxes = {}
-        # Insert YOLO inferencing code here
-        # The boundingBoxes should be a list of dictionaries containing 'class_id', 'confidence', 'x', 'y', 'w', 'h'
-        boundingBoxes = [
-            {'class_id': 0, 'confidence': 100, 'x': 50, 'y': 50, 'w': 100, 'h': 150},
-        ]#fake testing data
+        # Preprocess the image
+        img = cv2.resize(image, (320, 320))  # Adjust the size as per your model
+        cv2.imshow("raw image",img)
+        cv2.waitKey(1)  # Add a small delay to allow the image to be displayed
+        img = img.transpose((2, 0, 1))  # HWC to CHW
+        img = np.expand_dims(img, axis=0)  # Add batch dimension
+        img = torch.from_numpy(img).to(self.model.device)
+        img = img.float() / 255.0  # Normalize to [0, 1]
+
+        # Run inference
+        pred = self.model(img)
+
+        # Debug prints for prediction
+        self.get_logger().info(f'Prediction shape: {pred.shape}')
+        self.get_logger().info(f'Prediction: {pred[0]}')
+
+        # Apply Non-Maximum Suppression (NMS)
+        pred = non_max_suppression(pred, 0.25, 0.45, classes=None, agnostic=False)
+
+        # Debug prints for NMS
+        print(f'Predictions after NMS: {pred}')
+
+        # Process predictions
+        boundingBoxes = []
+        for det in pred:  # detections per image
+            if len(det):
+                det[:, :4] = scale_boxes(img.shape[2:], det[:, :4], image.shape).round()
+                for *xyxy, conf, cls in reversed(det):
+                    x1, y1, x2, y2 = xyxy
+                    w, h = x2 - x1, y2 - y1
+                    boundingBoxes.append({
+                        'class_id': int(cls)+1,
+                        'confidence': float(conf),
+                        'x': int(x1),
+                        'y': int(y1),
+                        'w': int(w),
+                        'h': int(h)
+                    })
         return boundingBoxes
 
-    # Overriding default callback
     def subscription_callback(self, msg):
         try:
             # Convert ROS Image message to OpenCV image
@@ -55,17 +97,16 @@ class YoloNode(image_node.ImageNode):
             labeled_image[roi_y, roi_x, 0] = np.where(mask, class_id, labeled_image[roi_y, roi_x, 0])
             labeled_image[roi_y, roi_x, 1] = np.where(mask, confidence, labeled_image[roi_y, roi_x, 1])
 
-            try:
-                # Convert labeled image to ROS Image message
-                labeled_msg = self.bridge.cv2_to_imgmsg(labeled_image, encoding="32FC2")
-            except CvBridgeError as e:
-                self.get_logger().error(f"Failed to convert labeled image: {e}")
-                return
+        try:
+            # Convert labeled image to ROS Image message
+            labeled_msg = self.bridge.cv2_to_imgmsg(labeled_image, encoding="32FC2")
+        except CvBridgeError as e:
+            self.get_logger().error(f"Failed to convert labeled image: {e}")
+            return
 
-            # Publish the labeled image
-
-            labeled_msg.header.stamp=self.get_clock().now().to_msg()
-            self.publisher_.publish(labeled_msg)
+        # Publish the labeled image
+        labeled_msg.header.stamp = self.get_clock().now().to_msg()
+        self.publisher_.publish(labeled_msg)
 
 def main(args=None):
     rclpy.init(args=args)

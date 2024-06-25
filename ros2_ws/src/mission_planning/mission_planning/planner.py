@@ -195,7 +195,7 @@ def main(args=None):
     sequence2.add_child(found_gatesq2)
     
     
-    risesq3 = fall_1m("risesq3")
+    risesq3 = rise_1m("risesq3")
     turn90cwsq3 = turn90cw("turn90sqcw3")
     found_gatesq3 = found_gate("found_gatesq3")
     
@@ -209,7 +209,6 @@ def main(args=None):
     selector2.add_child(sequence3)
     
     decorator1 = Retry(name = "decorator1", child = selector2, num_failures=8)
-    
     
     found_gatesl1 = found_gate("found_gatesl1")
      
@@ -233,7 +232,7 @@ def main(args=None):
     behaviour_tree.setup(timeout=15)
 
     def print_tree(tree):
-        node.get_logger().info(py_trees.display.unicode_tree(root=tree.root, show_status=True))
+        #node.get_logger().info(py_trees.display.unicode_tree(root=tree.root, show_status=True))
         pass
 
     while(rclpy.ok()):
